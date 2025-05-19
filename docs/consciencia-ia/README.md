@@ -1,1 +1,0 @@
-"# consciencia-ia"  
