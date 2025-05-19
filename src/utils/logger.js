@@ -84,10 +84,4 @@ const logError = (context, message, error = null) => {
     }
 };
 
-module.exports = {
-    safeLogError,
-    formatLogMessage,
-    logInfo,
-    logWarning,
-    logError
-};
+export { safeLogError, formatLogMessage, logInfo, logWarning, logError };
