@@ -82,46 +82,51 @@ app.get('/webhook', (req, res) => {
 
 // Rota de webhook para receber mensagens
 app.post('/webhook', async (req, res) => {
-    console.log('Recebida solicitação POST para webhook');
-    
     // Responder imediatamente para evitar timeout
     res.status(200).send('OK');
     
     try {
         const body = req.body;
-        console.log('Body completo:', JSON.stringify(body));
+        console.log('Webhook POST recebido:', JSON.stringify(body));
         
-        if (!body.object || !body.entry || !body.entry[0].changes) {
-            console.log('Formato de webhook inválido');
-            return;
-        }
-        
-        const change = body.entry[0].changes[0];
-        if (!change.value || !change.value.messages || !change.value.messages[0]) {
-            console.log('Sem mensagens no webhook');
-            return;
-        }
-        
-        const phoneNumberId = change.value.metadata.phone_number_id;
-        const from = change.value.messages[0].from;
-        const messageType = change.value.messages[0].type;
-        
-        console.log('Número de telefone ID:', phoneNumberId);
-        console.log('De:', from);
-        console.log('Tipo de mensagem:', messageType);
-        console.log('WHATSAPP_TOKEN configurado:', !!process.env.WHATSAPP_TOKEN);
-        
-        if (messageType === 'text') {
-            const msgBody = change.value.messages[0].text.body;
-            console.log('Mensagem:', msgBody);
+        // Verificar se é uma mensagem válida
+        if (body.object === 'whatsapp_business_account' && 
+            body.entry && 
+            body.entry[0].changes && 
+            body.entry[0].changes[0].value.messages) {
             
-            // Enviar resposta de boas-vindas
-            await enviarMensagemWhatsApp(phoneNumberId, from, "Olá! Bem-vindo à experiência Consciênc.IA para o evento Mapa do Lucro. Estou aqui para criar uma Carta da Consciência personalizada para você. Para começar, poderia me dizer seu nome?");
-        } else {
-            console.log('Tipo de mensagem não suportado:', messageType);
+            const phoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
+            const from = body.entry[0].changes[0].value.messages[0].from;
+            
+            console.log(`Enviando resposta para ${from} via ${phoneNumberId}`);
+            
+            // Enviar mensagem diretamente usando o mesmo formato do seu curl
+            const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+            
+            const response = await axios({
+                method: 'POST',
+                url: `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`,
+                headers: {
+                    'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                data: {
+                    messaging_product: "whatsapp",
+                    to: from,
+                    type: "text",
+                    text: { 
+                        body: "Olá! Bem-vindo à experiência Consciênc.IA para o evento Mapa do Lucro. Estou aqui para criar uma Carta da Consciência personalizada para você. Para começar, poderia me dizer seu nome?" 
+                    }
+                }
+            } );
+            
+            console.log('Resposta do envio:', JSON.stringify(response.data));
         }
     } catch (error) {
-        console.error('Erro ao processar mensagem:', error);
+        console.error('Erro ao processar webhook:', error.message);
+        if (error.response) {
+            console.error('Detalhes do erro:', JSON.stringify(error.response.data));
+        }
     }
 });
 
