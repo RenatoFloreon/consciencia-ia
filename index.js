@@ -9,7 +9,6 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const crypto = require('crypto');
-const { logInfo, logError } = require('./src/utils/logger');
 
 // Tratamento de erros não capturados
 process.on('uncaughtException', (error) => {
@@ -50,6 +49,43 @@ app.get('/', (req, res) => {
 // Rota de verificação de saúde para a Vercel
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Rota de webhook para validação da Meta
+app.get('/webhook', (req, res) => {
+    console.log('Recebida solicitação GET para webhook');
+    
+    // Token de verificação definido por você na configuração do WhatsApp
+    const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'floreon2025';
+    
+    // Parâmetros da solicitação
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+    
+    console.log('Mode:', mode);
+    console.log('Token:', token);
+    console.log('Challenge:', challenge);
+    
+    // Verificar se o token e o modo são válidos
+    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+        // Responder com o desafio para validar o webhook
+        console.log('Webhook validado com sucesso!');
+        res.status(200).send(challenge);
+    } else {
+        // Responder com erro se a validação falhar
+        console.error('Falha na validação do webhook');
+        res.sendStatus(403);
+    }
+});
+
+// Rota de webhook para receber mensagens
+app.post('/webhook', (req, res) => {
+    console.log('Recebida solicitação POST para webhook');
+    console.log('Body:', JSON.stringify(req.body));
+    
+    // Responder imediatamente para evitar timeout
+    res.status(200).send('OK');
 });
 
 // Tratamento de erros 404
