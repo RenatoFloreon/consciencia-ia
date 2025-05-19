@@ -9,8 +9,7 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const crypto = require('crypto');
-// Importar fetch para Node.js
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const axios = require('axios');
 
 // Tratamento de erros não capturados
 process.on('uncaughtException', (error) => {
@@ -85,35 +84,41 @@ app.get('/webhook', (req, res) => {
 app.post('/webhook', async (req, res) => {
     console.log('Recebida solicitação POST para webhook');
     
+    // Responder imediatamente para evitar timeout
+    res.status(200).send('OK');
+    
     try {
-        // Responder imediatamente para evitar timeout
-        res.status(200).send('OK');
-        
         const body = req.body;
         console.log('Body completo:', JSON.stringify(body));
         
-        // Verificar se é uma mensagem válida do WhatsApp
-        if (body.object && 
-            body.entry && 
-            body.entry[0].changes && 
-            body.entry[0].changes[0] && 
-            body.entry[0].changes[0].value.messages && 
-            body.entry[0].changes[0].value.messages[0]) {
-            
-            const phoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
-            const from = body.entry[0].changes[0].value.messages[0].from;
-            const msgBody = body.entry[0].changes[0].value.messages[0].text?.body;
-            
-            console.log('Número de telefone ID:', phoneNumberId);
-            console.log('De:', from);
+        if (!body.object || !body.entry || !body.entry[0].changes) {
+            console.log('Formato de webhook inválido');
+            return;
+        }
+        
+        const change = body.entry[0].changes[0];
+        if (!change.value || !change.value.messages || !change.value.messages[0]) {
+            console.log('Sem mensagens no webhook');
+            return;
+        }
+        
+        const phoneNumberId = change.value.metadata.phone_number_id;
+        const from = change.value.messages[0].from;
+        const messageType = change.value.messages[0].type;
+        
+        console.log('Número de telefone ID:', phoneNumberId);
+        console.log('De:', from);
+        console.log('Tipo de mensagem:', messageType);
+        console.log('WHATSAPP_TOKEN configurado:', !!process.env.WHATSAPP_TOKEN);
+        
+        if (messageType === 'text') {
+            const msgBody = change.value.messages[0].text.body;
             console.log('Mensagem:', msgBody);
             
             // Enviar resposta de boas-vindas
             await enviarMensagemWhatsApp(phoneNumberId, from, "Olá! Bem-vindo à experiência Consciênc.IA para o evento Mapa do Lucro. Estou aqui para criar uma Carta da Consciência personalizada para você. Para começar, poderia me dizer seu nome?");
-            
         } else {
-            console.log('Recebido webhook inválido ou não é uma mensagem');
-            console.log('Conteúdo do body:', JSON.stringify(body));
+            console.log('Tipo de mensagem não suportado:', messageType);
         }
     } catch (error) {
         console.error('Erro ao processar mensagem:', error);
@@ -132,36 +137,28 @@ async function enviarMensagemWhatsApp(phoneNumberId, to, message) {
         
         console.log(`Enviando mensagem para ${to} usando phoneNumberId ${phoneNumberId}`);
         console.log(`Mensagem: ${message}`);
-        console.log(`Token: ${WHATSAPP_TOKEN.substring(0, 5)}...`);
         
-        const response = await fetch(
-            `https://graph.facebook.com/v17.0/${phoneNumberId}/messages`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${WHATSAPP_TOKEN}`
-                },
-                body: JSON.stringify({
-                    messaging_product: "whatsapp",
-                    to: to,
-                    text: { body: message }
-                } )
+        const response = await axios({
+            method: 'POST',
+            url: `https://graph.facebook.com/v17.0/${phoneNumberId}/messages`,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${WHATSAPP_TOKEN}`
+            },
+            data: {
+                messaging_product: "whatsapp",
+                to: to,
+                text: { body: message }
             }
-        );
+        } );
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Erro na API do WhatsApp: ${response.status} ${response.statusText}`);
-            console.error(`Detalhes: ${errorText}`);
-            return;
-        }
-        
-        const data = await response.json();
-        console.log('Resposta da API do WhatsApp:', JSON.stringify(data));
-        return data;
+        console.log('Resposta da API do WhatsApp:', JSON.stringify(response.data));
+        return response.data;
     } catch (error) {
-        console.error('Erro ao enviar mensagem:', error);
+        console.error('Erro ao enviar mensagem:', error.message);
+        if (error.response) {
+            console.error('Detalhes do erro:', JSON.stringify(error.response.data));
+        }
         throw error;
     }
 }
