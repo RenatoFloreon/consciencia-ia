@@ -1,115 +1,133 @@
 /**
- * @fileoverview Rotas para o painel administrativo.
- * Inclui autenticação básica e endpoints para dados de interações e estatísticas.
+ * @fileoverview Rotas para o painel administrativo
+ * Este módulo define as rotas para o painel administrativo,
+ * incluindo autenticação, visualização de dados e API.
  */
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const sessionStore = require('../utils/sessionStore');
-const { logInfo, logError } = require('../utils/logger');
-const config = require('../config/env');
+import redisService from '../services/redisService.js';
+import { logInfo, logError } from '../utils/logger.js';
+import config from '../config/env.js';
 
-// Middleware de autenticação (Basic Auth ou sessão)
+// Middleware de autenticação para o painel administrativo
 const authMiddleware = (req, res, next) => {
-    // Verificar sessão existente
+    // Verificar se o usuário está autenticado via sessão
     if (req.session && req.session.authenticated) {
         return next();
     }
-    // Verificar credenciais via Basic Auth
+    
+    // Verificar se as credenciais foram fornecidas via Basic Auth
     const authHeader = req.headers.authorization;
     if (authHeader) {
         const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
         const username = auth[0];
         const password = auth[1];
+        
         if (username === config.ADMIN_USERNAME && password === config.ADMIN_PASSWORD) {
-            // Autenticar e salvar na sessão
+            // Armazenar autenticação na sessão
             req.session.authenticated = true;
             req.session.username = username;
             return next();
         }
     }
-    // Não autenticado: solicitar autenticação
-    res.set('WWW-Authenticate', 'Basic realm="Admin Panel"');
-    return res.status(401).send('Autenticação requerida');
+    
+    // Se não estiver autenticado, solicitar autenticação
+    res.set('WWW-Authenticate', 'Basic realm="Painel Administrativo"');
+    res.status(401).send('Autenticação necessária');
 };
 
-// Aplicar authMiddleware em todas as rotas /admin
+// Aplicar middleware de autenticação a todas as rotas do painel
 router.use(authMiddleware);
 
-// Rota principal do painel (dashboard)
-router.get('/', (req, res) => {
+// Rota principal do painel administrativo
+router.get('/', async (req, res) => {
     try {
+        // Renderizar a página principal do painel
         res.render('admin/dashboard', {
             title: 'Painel Administrativo - Consciênc.IA',
             username: req.session.username
         });
     } catch (error) {
-        logError('ADMIN_PANEL', 'Erro ao renderizar dashboard', error);
+        logError('ADMIN_PANEL', 'Erro ao renderizar painel administrativo', error);
         res.status(500).send('Erro ao carregar o painel administrativo');
     }
 });
 
-// API: obter últimas interações registradas
+// API para obter todas as interações
 router.get('/api/interactions', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 100;
-        const interactions = await sessionStore.getAllInteractions(limit);
-        if (interactions === null) {
+        const interactions = await redisService.getAllInteractions(limit);
+        
+        if (!interactions) {
             return res.status(500).json({ error: 'Erro ao obter interações' });
         }
-        return res.json(interactions);
+        
+        res.json(interactions);
     } catch (error) {
         logError('ADMIN_API', 'Erro ao obter interações', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
 
-// API: obter estatísticas gerais das interações
+// API para obter estatísticas gerais
 router.get('/api/stats', async (req, res) => {
     try {
-        const interactions = await sessionStore.getAllInteractions(1000);
-        if (interactions === null) {
+        const interactions = await redisService.getAllInteractions(1000);
+        
+        if (!interactions) {
             return res.status(500).json({ error: 'Erro ao obter interações' });
         }
-        // Calcular estatísticas simples
-        const total = interactions.length;
-        const delivered = interactions.filter(i => i.type === 'letter_delivered').length;
-        const followups = interactions.filter(i => i.type === 'followup_question').length;
-        const profilesAnalyzed = interactions.filter(i => i.profileUrl && i.type === 'letter_delivered').length;
-        const genericLetters = interactions.filter(i => i.letterIsGeneric && i.type === 'letter_delivered').length;
-        const personalizedLetters = interactions.filter(i => !i.letterIsGeneric && i.type === 'letter_delivered').length;
-        // Contagens agregadas de desafios
-        const businessChallenges = {};
-        const personalChallenges = {};
+        
+        // Calcular estatísticas
+        const stats = {
+            totalInteractions: interactions.length,
+            letterDelivered: interactions.filter(i => i.type === 'letter_delivered').length,
+            followupQuestions: interactions.filter(i => i.type === 'followup_question').length,
+            profilesAnalyzed: interactions.filter(i => i.profileUrl && i.type === 'letter_delivered').length,
+            genericLetters: interactions.filter(i => i.letterIsGeneric && i.type === 'letter_delivered').length,
+            personalizedLetters: interactions.filter(i => !i.letterIsGeneric && i.type === 'letter_delivered').length,
+            businessChallenges: {},
+            personalChallenges: {}
+        };
+        
+        // Contar desafios de negócios
         interactions.forEach(i => {
             if (i.businessChallenge) {
-                const key = i.businessChallenge.toLowerCase();
-                businessChallenges[key] = (businessChallenges[key] || 0) + 1;
+                const challenge = i.businessChallenge.toLowerCase();
+                stats.businessChallenges[challenge] = (stats.businessChallenges[challenge] || 0) + 1;
             }
+            
             if (i.personalChallenge) {
-                const key = i.personalChallenge.toLowerCase();
-                personalChallenges[key] = (personalChallenges[key] || 0) + 1;
+                const challenge = i.personalChallenge.toLowerCase();
+                stats.personalChallenges[challenge] = (stats.personalChallenges[challenge] || 0) + 1;
             }
         });
-        const stats = { total, delivered, followups, profilesAnalyzed, genericLetters, personalizedLetters, businessChallenges, personalChallenges };
-        return res.json(stats);
+        
+        res.json(stats);
     } catch (error) {
         logError('ADMIN_API', 'Erro ao obter estatísticas', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
 
-// Rota para exportar dados em CSV (interações tipo carta entregue)
+// Rota para exportar dados em CSV
 router.get('/export/csv', async (req, res) => {
     try {
-        const interactions = await sessionStore.getAllInteractions(1000);
-        if (interactions === null) {
+        const interactions = await redisService.getAllInteractions(1000);
+        
+        if (!interactions) {
             return res.status(500).send('Erro ao obter interações');
         }
+        
+        // Filtrar apenas interações do tipo letter_delivered
         const letterInteractions = interactions.filter(i => i.type === 'letter_delivered');
-        // Cabeçalho CSV
+        
+        // Criar cabeçalho do CSV
         let csv = 'Nome,Email,Telefone,Desafio de Negócio,Desafio Pessoal,Perfil URL,Data\n';
-        // Linhas CSV
+        
+        // Adicionar linhas
         letterInteractions.forEach(i => {
             const row = [
                 i.name || '',
@@ -120,21 +138,25 @@ router.get('/export/csv', async (req, res) => {
                 i.profileUrl || '',
                 i.timestampFormatted || ''
             ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(',');
+            
             csv += row + '\n';
         });
+        
+        // Configurar cabeçalhos para download
         res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename="consciencia_dados.csv"');
-        return res.send(csv);
+        res.setHeader('Content-Disposition', 'attachment; filename=consciencia_dados.csv');
+        
+        res.send(csv);
     } catch (error) {
-        logError('ADMIN_EXPORT', 'Erro ao exportar dados CSV', error);
+        logError('ADMIN_EXPORT', 'Erro ao exportar dados', error);
         res.status(500).send('Erro ao exportar dados');
     }
 });
 
-// Rota de logout do painel
+// Rota para logout
 router.get('/logout', (req, res) => {
     req.session.destroy();
     res.redirect('/admin');
 });
 
-module.exports = router;
+export default router;
