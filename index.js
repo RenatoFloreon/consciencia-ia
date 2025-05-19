@@ -71,52 +71,45 @@ app.get('/webhook', (req, res) => {
 
 // Rota de webhook para receber mensagens
 app.post('/webhook', async (req, res) => {
-    // Responder imediatamente para evitar timeout
-    res.status(200).send('OK');
-    
-    try {
-        const body = req.body;
-        console.log('Webhook POST recebido:', JSON.stringify(body));
-        
-        // Verificar se é uma mensagem válida
-        if (body.object === 'whatsapp_business_account' && 
-            body.entry && 
-            body.entry[0].changes && 
-            body.entry[0].changes[0].value.messages) {
-            
-            const phoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
-            const from = body.entry[0].changes[0].value.messages[0].from;
-            
-            console.log(`Enviando resposta para ${from} via ${phoneNumberId}`);
-            
-            // Enviar mensagem diretamente usando o mesmo formato do seu curl
-            const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-            
-            const response = await axios({
-                method: 'POST',
-                url: `https://graph.facebook.com/v22.0/${phoneNumberId}/messages`,
-                headers: {
-                    'Authorization': `Bearer ${WHATSAPP_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
-                data: {
-                    messaging_product: "whatsapp",
-                    to: from,
-                    type: "text",
-                    text: { 
-                        body: "Olá! Bem-vindo à experiência Consciênc.IA para o evento Mapa do Lucro. Estou aqui para criar uma Carta da Consciência personalizada para você. Para começar, poderia me dizer seu nome?" 
-                    }
-                }
-            } );
-            
-            console.log('Resposta do envio:', JSON.stringify(response.data));
-        }
-    } catch (error) {
-        console.error('Erro ao processar webhook:', error.message);
-        if (error.response) {
-            console.error('Detalhes do erro:', JSON.stringify(error.response.data));
-        }
+  const body = req.body;
+
+  if (body.object === 'whatsapp_business_account') {
+    const entry = body.entry?.[0];
+    const changes = entry?.changes?.[0];
+    const messages = changes?.value?.messages;
+
+    if (messages && messages[0]) {
+      const from = messages[0].from;
+      const messageBody = messages[0].text?.body;
+
+      console.log(`[WEBHOOK] Mensagem recebida de ${from}: ${messageBody}`);
+
+      try {
+        await axios.post(
+          'https://graph.facebook.com/v17.0/624440487421938/messages',
+          {
+            messaging_product: 'whatsapp',
+            to: from,
+            text: { body: `Você disse: ${messageBody}` }
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        console.log(`[WEBHOOK] Resposta enviada para ${from}`);
+      } catch (error) {
+        console.error('[WEBHOOK] Erro ao responder:', error.response?.data || error.message);
+      }
     }
+
+    res.sendStatus(200);
+  } else {
+    res.sendStatus(404);
+  }
 });
 
 // Função para enviar mensagem via WhatsApp API
