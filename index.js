@@ -9,6 +9,8 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const crypto = require('crypto');
+// Importar fetch para Node.js
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 // Tratamento de erros não capturados
 process.on('uncaughtException', (error) => {
@@ -80,12 +82,93 @@ app.get('/webhook', (req, res) => {
 });
 
 // Rota de webhook para receber mensagens
-app.post('/webhook', (req, res) => {
+app.post('/webhook', async (req, res) => {
     console.log('Recebida solicitação POST para webhook');
-    console.log('Body:', JSON.stringify(req.body));
     
-    // Responder imediatamente para evitar timeout
-    res.status(200).send('OK');
+    try {
+        // Responder imediatamente para evitar timeout
+        res.status(200).send('OK');
+        
+        const body = req.body;
+        console.log('Body completo:', JSON.stringify(body));
+        
+        // Verificar se é uma mensagem válida do WhatsApp
+        if (body.object && 
+            body.entry && 
+            body.entry[0].changes && 
+            body.entry[0].changes[0] && 
+            body.entry[0].changes[0].value.messages && 
+            body.entry[0].changes[0].value.messages[0]) {
+            
+            const phoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
+            const from = body.entry[0].changes[0].value.messages[0].from;
+            const msgBody = body.entry[0].changes[0].value.messages[0].text?.body;
+            
+            console.log('Número de telefone ID:', phoneNumberId);
+            console.log('De:', from);
+            console.log('Mensagem:', msgBody);
+            
+            // Enviar resposta de boas-vindas
+            await enviarMensagemWhatsApp(phoneNumberId, from, "Olá! Bem-vindo à experiência Consciênc.IA para o evento Mapa do Lucro. Estou aqui para criar uma Carta da Consciência personalizada para você. Para começar, poderia me dizer seu nome?");
+            
+        } else {
+            console.log('Recebido webhook inválido ou não é uma mensagem');
+            console.log('Conteúdo do body:', JSON.stringify(body));
+        }
+    } catch (error) {
+        console.error('Erro ao processar mensagem:', error);
+    }
+});
+
+// Função para enviar mensagem via WhatsApp API
+async function enviarMensagemWhatsApp(phoneNumberId, to, message) {
+    try {
+        const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+        
+        if (!WHATSAPP_TOKEN) {
+            console.error('WHATSAPP_TOKEN não configurado!');
+            return;
+        }
+        
+        console.log(`Enviando mensagem para ${to} usando phoneNumberId ${phoneNumberId}`);
+        console.log(`Mensagem: ${message}`);
+        console.log(`Token: ${WHATSAPP_TOKEN.substring(0, 5)}...`);
+        
+        const response = await fetch(
+            `https://graph.facebook.com/v17.0/${phoneNumberId}/messages`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${WHATSAPP_TOKEN}`
+                },
+                body: JSON.stringify({
+                    messaging_product: "whatsapp",
+                    to: to,
+                    text: { body: message }
+                } )
+            }
+        );
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Erro na API do WhatsApp: ${response.status} ${response.statusText}`);
+            console.error(`Detalhes: ${errorText}`);
+            return;
+        }
+        
+        const data = await response.json();
+        console.log('Resposta da API do WhatsApp:', JSON.stringify(data));
+        return data;
+    } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
+        throw error;
+    }
+}
+
+// Rota de admin simplificada
+app.get('/admin', (req, res) => {
+    res.send('Painel Administrativo - Em construção');
 });
 
 // Tratamento de erros 404
@@ -103,6 +186,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor iniciado na porta ${PORT} em ${new Date().toISOString()}`);
+    console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Tratamento de encerramento gracioso
