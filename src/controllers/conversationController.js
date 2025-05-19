@@ -1,294 +1,147 @@
-/**
- * @fileoverview Controlador para gerenciamento do fluxo de conversação
- * Este módulo implementa a lógica de controle do fluxo conversacional,
- * gerenciando estados, transições e processamento de mensagens.
- */
-
-import redisService from '../services/redisService.js';
+import sessionService from '../services/sessionService.js';
+import scrapingService from '../services/scrapingService.js';
+import openaiService from '../services/openaiService.js';
 import whatsappService from '../services/whatsappService.js';
-import profileScraperService from '../services/profileScraperService.js';
-import contentGenerationService from '../services/contentGenerationService.js';
-import config from '../config/env.js';
-import { logInfo, logError, logWarning } from '../utils/logger.js';
+import { log } from '../utils/logger.js';
 
 /**
- * Processa uma mensagem recebida e gerencia o fluxo da conversa
- * @param {Object} messageInfo - Informações da mensagem recebida
- * @returns {Promise<Object>} Resultado do processamento
+ * Handles an incoming message from a user, using a finite state conversational flow.
+ * @param {string} from - The user's WhatsApp ID (phone number).
+ * @param {string} messageText - The text content of the user's message.
+ * @returns {Promise<string[]>} - An array of response message texts to send back.
  */
-const processIncomingMessage = async (messageInfo) => {
-    try {
-        if (!messageInfo || !messageInfo.from || !messageInfo.text) {
-            logWarning('CONVERSATION_FLOW', 'Mensagem recebida inválida ou incompleta');
-            return { success: false, error: 'Mensagem inválida' };
-        }
+async function handleIncomingMessage(from, messageText) {
+  // Retrieve or initialize session state for this user
+  let session = await sessionService.getSession(from);
+  if (!session) {
+    session = {};  // create a new session object
+  }
+  let state = session.state || null;
+  const userMsg = messageText.trim();
 
-        const phoneNumber = messageInfo.from;
-        const messageText = messageInfo.text.trim();
-        
-        // Verificar comandos especiais
-        if (messageText.toLowerCase() === 'reset' || messageText.toLowerCase() === 'reiniciar') {
-            await redisService.resetUserConversation(phoneNumber);
-            await whatsappService.sendWhatsappMessage(
-                phoneNumber, 
-                "Sua conversa foi reiniciada. Vamos começar novamente!\n\n" + config.WELCOME_MESSAGE_1
-            );
-            return { success: true, action: 'reset' };
-        }
-
-        // Obter estado atual da conversa
-        let currentState = await redisService.getUserState(phoneNumber);
-        let userData = await redisService.getUserData(phoneNumber) || { phoneNumber };
-        
-        // Se não houver estado (novo usuário), iniciar fluxo
-        if (!currentState) {
-            currentState = redisService.CONVERSATION_STATES.NEW;
-            await redisService.saveUserState(phoneNumber, currentState);
-        }
-
-        // Processar mensagem de acordo com o estado atual
-        switch (currentState) {
-            case redisService.CONVERSATION_STATES.NEW:
-                // Enviar mensagem de boas-vindas e solicitar nome
-                await whatsappService.sendWhatsappMessage(phoneNumber, config.WELCOME_MESSAGE_1);
-                await redisService.saveUserState(phoneNumber, redisService.CONVERSATION_STATES.AWAITING_NAME);
-                return { success: true, action: 'welcome_sent' };
-                
-            case redisService.CONVERSATION_STATES.AWAITING_NAME:
-                // Processar nome recebido e solicitar e-mail
-                userData.name = messageText;
-                await redisService.updateUserData(phoneNumber, userData);
-                
-                // Enviar mensagem personalizada solicitando e-mail
-                const emailRequestMessage = config.WELCOME_MESSAGE_2.replace('{nome}', userData.name);
-                await whatsappService.sendWhatsappMessage(phoneNumber, emailRequestMessage);
-                await redisService.saveUserState(phoneNumber, redisService.CONVERSATION_STATES.AWAITING_EMAIL);
-                return { success: true, action: 'name_processed' };
-                
-            case redisService.CONVERSATION_STATES.AWAITING_EMAIL:
-                // Processar e-mail recebido e solicitar perfil
-                if (messageText.toLowerCase() === 'pular') {
-                    userData.email = 'não informado';
-                } else {
-                    userData.email = messageText;
-                }
-                await redisService.updateUserData(phoneNumber, userData);
-                
-                // Solicitar perfil de rede social
-                await whatsappService.sendWhatsappMessage(phoneNumber, config.PROFILE_REQUEST_MESSAGE);
-                await redisService.saveUserState(phoneNumber, redisService.CONVERSATION_STATES.AWAITING_PROFILE);
-                return { success: true, action: 'email_processed' };
-                
-            case redisService.CONVERSATION_STATES.AWAITING_PROFILE:
-                // Processar perfil recebido e solicitar desafio de negócio
-                userData.profileUrl = messageText;
-                await redisService.updateUserData(phoneNumber, userData);
-                
-                // Solicitar desafio de negócio
-                await whatsappService.sendWhatsappMessage(phoneNumber, config.BUSINESS_CHALLENGE_MESSAGE);
-                await redisService.saveUserState(phoneNumber, redisService.CONVERSATION_STATES.AWAITING_BUSINESS_CHALLENGE);
-                return { success: true, action: 'profile_processed' };
-                
-            case redisService.CONVERSATION_STATES.AWAITING_BUSINESS_CHALLENGE:
-                // Processar desafio de negócio e solicitar desafio pessoal
-                userData.businessChallenge = messageText;
-                await redisService.updateUserData(phoneNumber, userData);
-                
-                // Solicitar desafio pessoal
-                await whatsappService.sendWhatsappMessage(phoneNumber, config.PERSONAL_CHALLENGE_MESSAGE);
-                await redisService.saveUserState(phoneNumber, redisService.CONVERSATION_STATES.AWAITING_PERSONAL_CHALLENGE);
-                return { success: true, action: 'business_challenge_processed' };
-                
-            case redisService.CONVERSATION_STATES.AWAITING_PERSONAL_CHALLENGE:
-                // Processar desafio pessoal e iniciar geração da carta
-                userData.personalChallenge = messageText;
-                await redisService.updateUserData(phoneNumber, userData);
-                
-                // Enviar mensagem de processamento
-                await whatsappService.sendWhatsappMessage(phoneNumber, config.PROCESSING_MESSAGE);
-                await redisService.saveUserState(phoneNumber, redisService.CONVERSATION_STATES.PROCESSING_LETTER);
-                
-                // Iniciar processamento assíncrono da carta
-                generateAndSendLetter(phoneNumber, userData);
-                
-                return { success: true, action: 'personal_challenge_processed' };
-                
-            case redisService.CONVERSATION_STATES.LETTER_DELIVERED:
-                // Processar perguntas de acompanhamento após entrega da carta
-                const letterData = userData.letterData;
-                
-                if (!letterData) {
-                    logWarning('CONVERSATION_FLOW', `Dados da carta não encontrados para ${phoneNumber}`);
-                    await whatsappService.sendWhatsappMessage(
-                        phoneNumber, 
-                        "Desculpe, não consegui encontrar sua Carta de Consciência. Você gostaria de gerar uma nova? Responda 'reset' para recomeçar."
-                    );
-                    return { success: false, error: 'Dados da carta não encontrados' };
-                }
-                
-                // Gerar resposta para a pergunta de acompanhamento
-                const answer = await contentGenerationService.answerFollowUpQuestion(
-                    messageText,
-                    userData,
-                    letterData
-                );
-                
-                if (answer) {
-                    await whatsappService.sendWhatsappMessage(phoneNumber, answer);
-                    
-                    // Registrar interação para o painel administrativo
-                    await redisService.logInteraction({
-                        type: 'followup_question',
-                        phoneNumber,
-                        name: userData.name,
-                        email: userData.email,
-                        question: messageText,
-                        answer
-                    });
-                    
-                    return { success: true, action: 'followup_answered' };
-                } else {
-                    await whatsappService.sendWhatsappMessage(
-                        phoneNumber, 
-                        "Desculpe, não consegui processar sua pergunta. Poderia reformulá-la?"
-                    );
-                    return { success: false, error: 'Falha ao gerar resposta' };
-                }
-                
-            case redisService.CONVERSATION_STATES.PROCESSING_LETTER:
-                // Informar que a carta ainda está sendo processada
-                await whatsappService.sendWhatsappMessage(
-                    phoneNumber, 
-                    "Ainda estou trabalhando na sua Carta de Consciência personalizada. Isso pode levar alguns instantes. Agradeço sua paciência! ✨"
-                );
-                return { success: true, action: 'processing_notification_sent' };
-                
-            default:
-                // Estado desconhecido, resetar conversa
-                logWarning('CONVERSATION_FLOW', `Estado desconhecido para ${phoneNumber}: ${currentState}`);
-                await redisService.resetUserConversation(phoneNumber);
-                await whatsappService.sendWhatsappMessage(
-                    phoneNumber, 
-                    "Desculpe, ocorreu um erro no fluxo da conversa. Vamos recomeçar!\n\n" + config.WELCOME_MESSAGE_1
-                );
-                return { success: false, error: 'Estado desconhecido', action: 'reset' };
-        }
-    } catch (error) {
-        logError('CONVERSATION_FLOW', 'Erro ao processar mensagem recebida', error);
-        return { success: false, error: error.message };
+  // If no active state, check if user is initiating the conversation with the trigger phrase
+  if (!state) {
+    // The conversation starts when the user says they want to generate the Carta de Consciência
+    const normalized = userMsg.toLowerCase();
+    if (normalized.includes('carta') && normalized.includes('consci')) {
+      // User triggered the Carta generation flow
+      session.state = 'WAITING_NAME';
+      await sessionService.saveSession(from, session);
+      // First message: greeting and ask for name
+      const greeting = "Olá! 👋 Bem-vindo(a) ao *Conselheiro da Consciênc.IA* do evento MAPA DO LUCRO!\n\nSou um assistente virtual especial criado para gerar sua **Carta de Consciência** personalizada – uma análise única baseada no seu perfil digital, revelando insights valiosos sobre seu comportamento empreendedor e recomendações práticas de como usar IA no seu negócio.\n\nPara começar, preciso conhecer você melhor.\nPor favor, como gostaria de ser chamado(a)?";
+      return [ greeting ];
+    } else {
+      // No session and no trigger phrase – ignore or prompt user to start correctly
+      const prompt = "Olá! Para gerar sua *Carta de Consciência* personalizada, envie a mensagem: *\"Olá! Quero gerar minha Carta de Consciência personalizada.\"*";
+      return [ prompt ];
     }
-};
+  }
 
-/**
- * Gera e envia a Carta de Consciência personalizada
- * @param {string} phoneNumber - Número de telefone do usuário
- * @param {Object} userData - Dados do usuário
- * @returns {Promise<void>}
- */
-const generateAndSendLetter = async (phoneNumber, userData) => {
-    try {
-        logInfo('LETTER_GENERATION', `Iniciando geração da carta para ${userData.name} (${phoneNumber})`);
-        
-        // Analisar perfil (se fornecido)
-        let profileAnalysis = null;
-        
-        if (userData.profileUrl && (userData.profileUrl.includes('instagram.com') || userData.profileUrl.includes('linkedin.com'))) {
-            logInfo('LETTER_GENERATION', `Analisando perfil: ${userData.profileUrl}`);
-            
-            // Usar abordagem híbrida para análise de perfil
-            profileAnalysis = await profileScraperService.analyzeProfileHybrid(userData.profileUrl);
-            
-            if (profileAnalysis) {
-                logInfo('LETTER_GENERATION', `Análise de perfil concluída com sucesso`);
-                
-                // Atualizar dados do usuário com a análise do perfil
-                userData.profileAnalysis = profileAnalysis;
-                await redisService.updateUserData(phoneNumber, userData);
-            } else {
-                logWarning('LETTER_GENERATION', `Falha na análise do perfil. Gerando carta genérica.`);
-            }
+  // We have an active session state; proceed with conversation flow
+  const responses = [];
+  try {
+    switch (state) {
+      case 'WAITING_NAME': {
+        // Save the provided name (nickname or preferred name)
+        const name = userMsg;
+        session.name = name;
+        session.state = 'WAITING_EMAIL';
+        await sessionService.saveSession(from, session);
+        // Respond thanking for name and ask for email (with option to skip)
+        const askEmail = `Obrigado, *${name}*! 😊\n\nPara enviarmos materiais e manter contato após o evento, por favor me informe seu e-mail:\n_(Se não quiser fornecer, responda "pular")_`;
+        responses.push(askEmail);
+        break;
+      }
+      case 'WAITING_EMAIL': {
+        let email = userMsg;
+        if (email.toLowerCase() === 'pular') {
+          email = null;
+        }
+        session.email = email;
+        session.state = 'WAITING_PROFILE';
+        await sessionService.saveSession(from, session);
+        // Ask for Instagram or LinkedIn profile link
+        const askProfile = "Perfeito! Agora, para gerar sua Carta de Consciência personalizada, preciso analisar seu perfil digital.\n\nPor favor, me envie o link do seu perfil público do *Instagram* ou *LinkedIn*.\nExemplo: https://www.instagram.com/seuusuario";
+        responses.push(askProfile);
+        break;
+      }
+      case 'WAITING_PROFILE': {
+        let profileLink = userMsg;
+        if (!profileLink.startsWith('http')) {
+          profileLink = 'https://' + profileLink;
+        }
+        session.profileLink = profileLink;
+        session.state = 'WAITING_PROF_CHALLENGE';
+        await sessionService.saveSession(from, session);
+        // Ask for the user's biggest professional challenge
+        const askProfChallenge = "Obrigado! 🤗\n\nAgora me conte, em uma *palavra ou frase*, qual é o maior desafio que você tem enfrentado no seu **negócio** atualmente?";
+        responses.push(askProfChallenge);
+        break;
+      }
+      case 'WAITING_PROF_CHALLENGE': {
+        session.profChallenge = userMsg;
+        session.state = 'WAITING_PERS_CHALLENGE';
+        await sessionService.saveSession(from, session);
+        // Ask for the user's biggest personal challenge
+        const askPersChallenge = "Entendi! E na sua **vida pessoal**, qual tem sido o maior desafio? (Responda também com uma palavra ou frase.)";
+        responses.push(askPersChallenge);
+        break;
+      }
+      case 'WAITING_PERS_CHALLENGE': {
+        // User provided personal challenge, now we have all inputs to generate the letter
+        session.persChallenge = userMsg;
+        session.state = 'GENERATING_LETTER';
+        await sessionService.saveSession(from, session);
+        // Acknowledge and inform the user we're generating the letter (this might take a moment)
+        const processingMsg = "Gratidão por compartilhar! 🙏\nVou analisar seu perfil e gerar sua Carta de Consciência personalizada. Isso pode levar alguns instantes... ⏳";
+        responses.push(processingMsg);
+
+        // Gather profile data (scrape Instagram/LinkedIn)
+        const profileData = await scrapingService.scrapeProfile(session.profileLink);
+        // Generate the personalized letter using OpenAI (GPT-4 with Vision)
+        const letterContent = await openaiService.generateLetter(session.name, profileData, session.profChallenge, session.persChallenge);
+        // Split the letter into chunks if it exceeds WhatsApp message length limits
+        const letterParts = whatsappService.splitMessage(letterContent, 1600);
+        for (const part of letterParts) {
+          responses.push(part);
+        }
+
+        // After sending the Carta, ask if the user wants more info about AI in business or personal life
+        session.state = 'WAITING_MORE_INFO';
+        await sessionService.saveSession(from, session);
+        const followUp = "✨ *Sua Carta de Consciência personalizada foi entregue!* ✨\n\nEspero que tenha gostado do que leu. 😊 Gostaria de saber mais sobre como a *Inteligência Artificial* pode ajudar no seu *negócio* ou na sua *vida pessoal*? Responda **\"negócios\"** ou **\"vida pessoal\"**, ou digite *\"não\"* caso não deseje continuar.";
+        responses.push(followUp);
+        break;
+      }
+      case 'WAITING_MORE_INFO': {
+        const choice = userMsg.toLowerCase();
+        if (choice.includes('negócio') || choice.includes('negocio')) {
+          // User is interested in AI for business
+          responses.push("🚀 *IA nos Negócios:* A Inteligência Artificial pode revolucionar seus negócios! Ela pode automatizar atendimentos, analisar dados de vendas para identificar oportunidades e até criar conteúdo de marketing sob medida. Para se aprofundar, conheça o **Programa Consciênc.IA** desenvolvido por Renato Hilel e Nuno Arcanjo, focado em estratégias de IA aplicadas ao crescimento empresarial. Acesse: https://www.floreon.app.br/conscienc-ia 🌐");
+        } else if (choice.includes('vida')) {
+          // User is interested in AI for personal life
+          responses.push("💡 *IA na Vida Pessoal:* A Inteligência Artificial também pode melhorar sua vida pessoal! Pode ajudá-lo(a) a organizar sua rotina, aprender novas habilidades com tutores virtuais e até oferecer suporte para o seu bem-estar emocional. O **Programa Consciênc.IA** (dos especialistas Renato Hilel e Nuno Arcanjo) aborda como integrar a IA na sua vida e carreira. Saiba mais em: https://www.floreon.app.br/conscienc-ia 🌟");
         } else {
-            logInfo('LETTER_GENERATION', `Perfil não fornecido ou inválido. Gerando carta genérica.`);
+          // User is not interested or gave an unrecognized response
+          responses.push("Sem problemas! 😊 Foi um prazer ajudar você com sua Carta de Consciência. Aproveite o evento *MAPA DO LUCRO* e, se tiver interesse, não deixe de conversar pessoalmente com os criadores do programa Consciênc.IA. Sucesso! 💫");
         }
-        
-        // Gerar a carta personalizada
-        const letterData = await contentGenerationService.generateConscienceLetter(userData, profileAnalysis);
-        
-        if (!letterData) {
-            logError('LETTER_GENERATION', `Falha ao gerar carta para ${phoneNumber}`);
-            await whatsappService.sendWhatsappMessage(
-                phoneNumber, 
-                "Desculpe, encontrei um problema ao gerar sua Carta de Consciência. Por favor, tente novamente mais tarde ou digite 'reset' para recomeçar."
-            );
-            return;
-        }
-        
-        // Atualizar dados do usuário com a carta gerada
-        userData.letterData = letterData;
-        await redisService.updateUserData(phoneNumber, userData);
-        
-        // Enviar a carta para o usuário
-        await whatsappService.sendWhatsappMessage(phoneNumber, letterData.fullLetter);
-        
-        // Enviar mensagem final
-        await whatsappService.sendWhatsappMessage(phoneNumber, config.FINAL_MESSAGE);
-        
-        // Atualizar estado da conversa
-        await redisService.saveUserState(phoneNumber, redisService.CONVERSATION_STATES.LETTER_DELIVERED);
-        
-        // Registrar interação completa para o painel administrativo
-        await redisService.logInteraction({
-            type: 'letter_delivered',
-            phoneNumber,
-            name: userData.name,
-            email: userData.email,
-            businessChallenge: userData.businessChallenge,
-            personalChallenge: userData.personalChallenge,
-            profileUrl: userData.profileUrl,
-            letterIsGeneric: letterData.isGeneric
-        });
-        
-        logInfo('LETTER_GENERATION', `Carta enviada com sucesso para ${phoneNumber}`);
-    } catch (error) {
-        logError('LETTER_GENERATION', `Erro ao gerar e enviar carta`, error);
-        
-        // Notificar usuário sobre o erro
-        await whatsappService.sendWhatsappMessage(
-            phoneNumber, 
-            "Desculpe, encontrei um problema ao gerar sua Carta de Consciência. Por favor, tente novamente mais tarde ou digite 'reset' para recomeçar."
-        );
-        
-        // Resetar estado para permitir nova tentativa
-        await redisService.saveUserState(phoneNumber, redisService.CONVERSATION_STATES.LETTER_DELIVERED);
+        // End of conversation – clear session data
+        await sessionService.deleteSession(from);
+        break;
+      }
+      default:
+        // If somehow an unknown state, reset the session
+        await sessionService.deleteSession(from);
+        responses.push("Algo deu errado, vamos começar novamente? Envie *\"Olá! Quero minha Carta de Consciência\"* para reiniciar o processo.");
+        break;
     }
-};
+  } catch (error) {
+    log('Error in conversation flow:', error);
+    responses.push("Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
+    // Optionally reset session on error
+    await sessionService.deleteSession(from);
+  }
+  return responses;
+}
 
-/**
- * Inicia o fluxo de boas-vindas para um usuário
- * @param {string} phoneNumber - Número de telefone do usuário
- * @returns {Promise<boolean>} Indica se a operação foi bem-sucedida
- */
-const initiateWelcomeFlow = async (phoneNumber) => {
-    try {
-        // Resetar conversa para garantir um início limpo
-        await redisService.resetUserConversation(phoneNumber);
-        
-        // Enviar mensagem de boas-vindas
-        await whatsappService.sendWhatsappMessage(phoneNumber, config.WELCOME_MESSAGE_1);
-        
-        // Definir estado inicial
-        await redisService.saveUserState(phoneNumber, redisService.CONVERSATION_STATES.AWAITING_NAME);
-        
-        logInfo('CONVERSATION_FLOW', `Fluxo de boas-vindas iniciado para ${phoneNumber}`);
-        return true;
-    } catch (error) {
-        logError('CONVERSATION_FLOW', `Erro ao iniciar fluxo de boas-vindas para ${phoneNumber}`, error);
-        return false;
-    }
-};
-
-export default {
-    processIncomingMessage,
-    generateAndSendLetter,
-    initiateWelcomeFlow
-};
+export default { handleIncomingMessage };
