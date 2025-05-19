@@ -1,6 +1,6 @@
 /**
- * @fileoverview Rotas para o webhook do WhatsApp
- * Este módulo define as rotas para receber e processar webhooks do WhatsApp.
+ * @fileoverview Rotas para o webhook do WhatsApp.
+ * Lida com a verificação do webhook (GET) e com as mensagens recebidas (POST).
  */
 
 const express = require('express');
@@ -10,43 +10,34 @@ const whatsappService = require('../services/whatsappService');
 const { logInfo, logError } = require('../utils/logger');
 const config = require('../config/env');
 
-// Rota para verificação do webhook (GET)
+// Rota GET para verificação do webhook (desafio do token)
 router.get('/', (req, res) => {
-    const verificationResult = whatsappService.verifyWebhook(req.query);
-    
-    if (verificationResult.isValid) {
-        logInfo('WEBHOOK', 'Verificação de webhook bem-sucedida');
-        res.status(200).send(verificationResult.challenge);
-    } else {
-        logError('WEBHOOK', 'Falha na verificação de webhook: token inválido');
-        res.sendStatus(403);
+    const verification = whatsappService.verifyWebhook(req.query);
+    if (verification.isValid) {
+        logInfo('WEBHOOK', 'Verificação do webhook realizada com sucesso.');
+        return res.status(200).send(verification.challenge);
     }
+    logError('WEBHOOK', 'Falha na verificação do webhook.');
+    return res.sendStatus(403);
 });
 
-// Rota para receber mensagens do webhook (POST)
+// Rota POST para receber mensagens do webhook do WhatsApp
 router.post('/', async (req, res) => {
     try {
-        // Responder imediatamente para evitar timeout
+        // Resposta imediata para evitar timeout do webhook
         res.status(200).send('EVENT_RECEIVED');
-        
-        // Processar a mensagem de forma assíncrona
         const webhookData = req.body;
-        logInfo('WEBHOOK', `Webhook recebido: ${JSON.stringify(webhookData)}`);
-        
-        // Verificar se é uma mensagem válida
+        logInfo('WEBHOOK', `Dados recebidos no webhook: ${JSON.stringify(webhookData)}`);
+        // Processar mensagem recebida
         const messageInfo = whatsappService.processWebhookMessage(webhookData);
-        
         if (!messageInfo) {
-            logInfo('WEBHOOK', 'Webhook não contém mensagem válida');
+            logInfo('WEBHOOK', 'Webhook recebido não continha mensagem de usuário.');
             return;
         }
-        
-        // Processar a mensagem recebida
-        const result = await conversationController.processIncomingMessage(messageInfo);
-        
-        logInfo('WEBHOOK', `Mensagem processada: ${JSON.stringify(result)}`);
+        // Delegar processamento da mensagem ao controlador de conversa
+        await conversationController.processIncomingMessage(messageInfo);
     } catch (error) {
-        logError('WEBHOOK', 'Erro ao processar webhook', error);
+        logError('WEBHOOK', 'Erro ao processar requisição POST do webhook', error);
     }
 });
 
