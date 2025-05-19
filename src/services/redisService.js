@@ -4,9 +4,9 @@
  * da conversa e os dados dos usuários.
  */
 
-const Redis = require('ioredis');
-const config = require('../config/env');
-const { logInfo, logError, logWarning } = require('../utils/logger');
+import Redis from 'ioredis';
+import config from '../config/env.js';
+import { logInfo, logError, logWarning } from '../utils/logger.js';
 
 // Prefixos para as chaves no Redis
 const KEY_PREFIXES = {
@@ -417,7 +417,7 @@ const resetUserConversation = async (phoneNumber) => {
     }
 };
 
-module.exports = {
+export default {
     initRedis,
     getRedisClient,
     saveUserState,
