@@ -18,6 +18,7 @@
   "author": "Renato Hilel e Nuno Arcanjo",
   "license": "ISC",
   "dependencies": {
+    "node-fetch": "^3.3.0",
     "axios": "^1.6.2",
     "cheerio": "^1.0.0-rc.12",
     "connect-redis": "^7.1.0",
