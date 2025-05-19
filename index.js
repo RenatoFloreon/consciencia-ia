@@ -54,30 +54,19 @@ app.get('/api/health', (req, res) => {
 
 // Rota de webhook para validação da Meta
 app.get('/webhook', (req, res) => {
-    console.log('Recebida solicitação GET para webhook');
-    
-    // Token de verificação definido por você na configuração do WhatsApp
-    const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'floreon2025';
-    
-    // Parâmetros da solicitação
-    const mode = req.query['hub.mode'];
-    const token = req.query['hub.verify_token'];
-    const challenge = req.query['hub.challenge'];
-    
-    console.log('Mode:', mode);
-    console.log('Token:', token);
-    console.log('Challenge:', challenge);
-    
-    // Verificar se o token e o modo são válidos
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-        // Responder com o desafio para validar o webhook
-        console.log('Webhook validado com sucesso!');
-        res.status(200).send(challenge);
-    } else {
-        // Responder com erro se a validação falhar
-        console.error('Falha na validação do webhook');
-        res.sendStatus(403);
-    }
+  const VERIFY_TOKEN = "floreon2025"; // mesmo token que você colocou no painel da Meta
+
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode && token === VERIFY_TOKEN) {
+    console.log('[WEBHOOK] Verificado com sucesso!');
+    res.status(200).send(challenge);
+  } else {
+    console.warn('[WEBHOOK] Verificação falhou.');
+    res.sendStatus(403);
+  }
 });
 
 // Rota de webhook para receber mensagens
