@@ -1,103 +1,411 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Painel | Conscienc.IA</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      background: #F1EFEA;
-      color: #282831;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 14px;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #ccc;
-    }
-    th {
-      background-color: #8834DC;
-      color: #fff;
-      text-align: left;
-    }
-    h1 {
-      color: #8834DC;
-    }
-    .tag {
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-    }
-    .tag-print {
-      background-color: #2A98F9;
-      color: white;
-    }
-    .tag-image {
-      background-color: #A192CF;
-      color: white;
-    }
-    .tag-text {
-      background-color: #F11E3A;
-      color: white;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consciênc.IA Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --success-color: #00b894;
+            --warning-color: #fdcb6e;
+            --danger-color: #d63031;
+            --light-color: #f8f9fa;
+            --dark-color: #2d3436;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .sidebar {
+            background-color: var(--primary-color);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            padding-top: 20px;
+        }
+        
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            display: block;
+            transition: all 0.3s;
+        }
+        
+        .sidebar a:hover {
+            background-color: var(--secondary-color);
+            border-left: 4px solid white;
+        }
+        
+        .sidebar .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .users-card {
+            padding: 0;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .status-completed {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .status-error {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .status-pending {
+            background-color: var(--warning-color);
+            color: var(--dark-color);
+        }
+        
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 5px;
+            color: white;
+        }
+        
+        .view-btn {
+            background-color: var(--primary-color);
+        }
+        
+        .download-btn {
+            background-color: var(--secondary-color);
+        }
+        
+        .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .profile-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 5px;
+        }
+        
+        .letter-content {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        
+        .pagination {
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .pagination .page-link {
+            color: var(--primary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .content {
+                margin-left: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Painel de Participantes - Consciênc.IA</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>Telefone</th>
-        <th>Input</th>
-        <th>Imagem</th>
-        <th>Desafio</th>
-        <th>Carta</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% users.forEach(function(user) { %>
-        <tr>
-          <td><%= user.name || '-' %></td>
-          <td><%= user.phone || '-' %></td>
-          <td>
-            <% if (user.inputType === 'print') { %>
-              <span class="tag tag-print">📸 Print</span>
-            <% } else if (user.inputType === 'image') { %>
-              <span class="tag tag-image">🧠 Imagem</span>
-            <% } else if (user.inputType === 'text') { %>
-              <span class="tag tag-text">🔤 Texto</span>
-            <% } else { %>
-              -
-            <% } %>
-          </td>
-          <td>
-            <% if (user.imageUrl) { %>
-              <a href="<%= user.imageUrl %>" target="_blank">Visualizar</a>
-            <% } else { %>
-              -
-            <% } %>
-          </td>
-          <td><%= user.challenge || '-' %></td>
-          <td>
-            <% if (user.carta) { %>
-              <details>
-                <summary>Ver Carta</summary>
-                <pre><%= user.carta %></pre>
-              </details>
-            <% } else { %>
-              -
-            <% } %>
-          </td>
-        </tr>
-      <% }); %>
-    </tbody>
-  </table>
-</body>
-</html>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar">
+                <div class="title">Consciênc.IA Admin</div>
+                <a href="#" class="active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+                <a href="#" id="exportJson"><i class="bi bi-file-earmark-code me-2"></i> Exportar JSON</a>
+                <a href="#" id="exportCsv"><i class="bi bi-file-earmark-spreadsheet me-2"></i> Exportar CSV</a>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10 content">
+                <h1 class="mb-4">Dashboard</h1>
+                
+                <!-- Stats Cards -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-light">
+                            <div class="card-body">
+                                <div class="card-icon text-primary">
+                                    <i class="bi bi-people"></i>
+                                </div>
+                                <h5 class="card-title">Total de Usuários</h5>
+                                <h2 class="card-text" id="totalUsers">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-light">
+                            <div class="card-body">
+                                <div class="card-icon text-success">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                                <h5 class="card-title">Cartas Entregues</h5>
+                                <h2 class="card-text" id="completedLetters">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-light">
+                            <div class="card-body">
+                                <div class="card-icon text-info">
+                                    <i class="bi bi-hourglass-split"></i>
+                                </div>
+                                <h5 class="card-title">Tempo Médio</h5>
+                                <h2 class="card-text" id="avgTime">0s</h2>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-light">
+                            <div class="card-body">
+                                <div class="card-icon text-warning">
+                                    <i class="bi bi-chat-dots"></i>
+                                </div>
+                                <h5 class="card-title">Conversas Ativas</h5>
+                                <h2 class="card-text" id="activeSessions">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Users Table -->
+                <div class="card users-card mt-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Lista de Usuários</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Telefone</th>
+                                        <th>Email</th>
+                                        <th>Instagram</th>
+                                        <th>Estado</th>
+                                        <th>Início</th>
+                                        <th>Conclusão</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Table rows will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pagination -->
+                <nav aria-label="Page navigation">
+                    <ul class="pagination" id="pagination">
+                        <!-- Pagination will be populated by JavaScript -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Details Modal -->
+    <div class="modal fade" id="userDetailsModal" tabindex="-1" aria-labelledby="userDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userDetailsModalLabel">Detalhes do Usuário</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Informações Pessoais</h6>
+                            <p><strong>Nome:</strong> <span id="modalName"></span></p>
+                            <p><strong>Telefone:</strong> <span id="modalPhone"></span></p>
+                            <p><strong>Email:</strong> <span id="modalEmail"></span></p>
+                            <p><strong>Instagram:</strong> <span id="modalInstagram"></span></p>
+                            <p><strong>Tipo de Input:</strong> <span id="modalInputType"></span></p>
+                            <p><strong>Desafio:</strong> <span id="modalChallenge"></span></p>
+                            <p><strong>Tempo de Processamento:</strong> <span id="modalProcessingTime"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Imagem do Perfil</h6>
+                            <div id="modalImageContainer">
+                                <img src="" alt="Imagem do perfil" id="modalImage" class="profile-image">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6>Carta de Consciência</h6>
+                            <div class="letter-content" id="modalLetterContent">
+                                <!-- Letter content will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" id="downloadLetter">Baixar Carta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sample data for demonstration
+        let interactions = [];
+        let activeSessions = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        
+        // Fetch data from API
+        async function fetchData() {
+            try {
+                const interactionsResponse = await fetch('/api/admin/interactions');
+                interactions = await interactionsResponse.json();
+                
+                const sessionsResponse = await fetch('/api/admin/sessions');
+                activeSessions = await sessionsResponse.json();
+                
+                updateDashboard();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+        
+        // Update dashboard with fetched data
+        function updateDashboard() {
+            // Update stats
+            document.getElementById('totalUsers').textContent = interactions.length;
+            document.getElementById('completedLetters').textContent = interactions.filter(i => i.status === 'completed').length;
+            document.getElementById('activeSessions').textContent = activeSessions.length;
+            
+            // Calculate average processing time
+            const processingTimes = interactions
+                .filter(i => i.processingTime)
+                .map(i => i.processingTime);
+                
+            if (processingTimes.length > 0) {
+                const avgTime = processingTimes.reduce((sum, time) => sum + time, 0) / processingTimes.length;
+                document.getElementById('avgTime').textContent = formatTime(avgTime);
+            }
+            
+            // Update users table
+            updateUsersTable();
+            
+            // Update pagination
+            updatePagination();
+        }
+        
+        // Update users table with paginated data
+        function updateUsersTable() {
+            const tableBody = document.getElementById('usersTableBody');
+            tableBody.innerHTML = '';
+            
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedData = interactions.slice(startIndex, endIndex);
+            
+            if (paginatedData.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="8" class="text-center">Nenhum dado disponível</td>';
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            paginatedData.forEach(interaction => {
+                const row = document.createElement('tr');
+                
+                const startDate = new Date(interaction.startTimestamp);
+                const endDate = new Date(interaction.endTimestamp || interaction.timestamp);
+                
+                row.innerHTML = `
+                    <td>${interaction.name || 'Não informado'}</td>
+                    <td>${formatPhoneNumber(interaction.phoneNumber)}</td>
+                    <td>${interaction.email || 'Não informado'}</td>
+                    <td>${formatProfileUrl(interaction.profileUrl)}</td>
+                    <td><span class="status-badge ${interaction.status === 'completed' ? 'status-completed' : 'status-error'}">${interaction.status === 'completed' ? 'COMPLETED' : 'ERROR'}</span></td>
+                    <td>${formatDate(startDate)}</td>
+                    <td>${formatDate(endDate)}</td>
+                    <td>
+                        <button class="btn action-btn view-btn" data-id="${interaction.id}" onclick="showUserDetails('${interaction.id}')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn action-btn download-btn" data-id="${interaction.id}" onclick="downloadUserData('${interaction.id}')">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </button>
+                    </td>
+         
+(Content truncated due to size limit. Use line ranges to read in chunks)
