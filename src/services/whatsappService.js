@@ -6,24 +6,44 @@ const WHATSAPP_API_URL = 'https://graph.facebook.com/v17.0';
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
 
+// Função para verificar configurações do WhatsApp
+function checkWhatsAppConfig() {
+  if (!WHATSAPP_TOKEN) {
+    log('⚠️ ERRO CRÍTICO: Token do WhatsApp não configurado! Verifique a variável de ambiente WHATSAPP_TOKEN no painel do Vercel.');
+    return false;
+  }
+  
+  if (!WHATSAPP_PHONE_ID) {
+    log('⚠️ ERRO CRÍTICO: ID do telefone do WhatsApp não configurado! Verifique a variável de ambiente WHATSAPP_PHONE_ID no painel do Vercel.');
+    return false;
+  }
+  
+  return true;
+}
+
 // Função para enviar mensagem de texto
 async function sendTextMessage(to, text) {
   try {
-    log(`Enviando mensagem para ${to}: ${text.substring(0, 50)}...`);
-    
-    // Verifica se o token e o ID do telefone estão configurados
-    if (!WHATSAPP_TOKEN) {
-      log('⚠️ ERRO CRÍTICO: Token do WhatsApp não configurado! Verifique as variáveis de ambiente.');
+    if (!to || !text) {
+      log('Erro: Número de telefone ou texto não fornecidos');
       return false;
     }
     
-    if (!WHATSAPP_PHONE_ID) {
-      log('⚠️ ERRO CRÍTICO: ID do telefone do WhatsApp não configurado! Verifique as variáveis de ambiente.');
+    log(`Enviando mensagem para ${to}: ${text.substring(0, 50)}...`);
+    
+    // Verifica configurações do WhatsApp
+    if (!checkWhatsAppConfig()) {
+      // Se as configurações não estiverem corretas, simula sucesso em ambiente de desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        log('Ambiente de desenvolvimento: simulando envio bem-sucedido');
+        return true;
+      }
       return false;
     }
     
     // Divide mensagens longas para evitar cortes
     const messages = splitLongMessage(text);
+    let successCount = 0;
     
     // Envia cada parte da mensagem
     for (const message of messages) {
@@ -44,20 +64,25 @@ async function sendTextMessage(to, text) {
               preview_url: true,
               body: message
             }
-          }
+          },
+          timeout: 10000 // 10 segundos de timeout
         });
         
         log(`Resposta da API do WhatsApp: ${JSON.stringify(response.data)}`);
+        successCount++;
       } catch (sendError) {
         log('Erro detalhado ao enviar mensagem:', sendError.response?.data || sendError.message);
         // Continua tentando enviar as outras partes da mensagem
       }
       
       // Aguarda um pequeno intervalo entre mensagens para evitar bloqueios
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (messages.length > 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
     
-    return true;
+    // Considera sucesso se pelo menos uma parte foi enviada
+    return successCount > 0;
   } catch (error) {
     log('Erro ao enviar mensagem de texto:', error.response?.data || error.message);
     return false;
@@ -67,16 +92,20 @@ async function sendTextMessage(to, text) {
 // Função para enviar mensagem com botões
 async function sendButtonMessage(to, text, buttons) {
   try {
-    log(`Enviando mensagem com botões para ${to}`);
-    
-    // Verifica se o token e o ID do telefone estão configurados
-    if (!WHATSAPP_TOKEN) {
-      log('⚠️ ERRO CRÍTICO: Token do WhatsApp não configurado! Verifique as variáveis de ambiente.');
+    if (!to || !text || !buttons || !buttons.length) {
+      log('Erro: Parâmetros incompletos para envio de mensagem com botões');
       return false;
     }
     
-    if (!WHATSAPP_PHONE_ID) {
-      log('⚠️ ERRO CRÍTICO: ID do telefone do WhatsApp não configurado! Verifique as variáveis de ambiente.');
+    log(`Enviando mensagem com botões para ${to}`);
+    
+    // Verifica configurações do WhatsApp
+    if (!checkWhatsAppConfig()) {
+      // Se as configurações não estiverem corretas, simula sucesso em ambiente de desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        log('Ambiente de desenvolvimento: simulando envio bem-sucedido');
+        return true;
+      }
       return false;
     }
     
@@ -107,13 +136,21 @@ async function sendButtonMessage(to, text, buttons) {
             }))
           }
         }
-      }
+      },
+      timeout: 10000 // 10 segundos de timeout
     });
     
     log(`Resposta da API do WhatsApp: ${JSON.stringify(response.data)}`);
     return true;
   } catch (error) {
     log('Erro ao enviar mensagem com botões:', error.response?.data || error.message);
+    
+    // Em ambiente de desenvolvimento, simula sucesso
+    if (process.env.NODE_ENV === 'development') {
+      log('Ambiente de desenvolvimento: simulando envio bem-sucedido');
+      return true;
+    }
+    
     return false;
   }
 }
@@ -121,16 +158,20 @@ async function sendButtonMessage(to, text, buttons) {
 // Função para enviar mensagem com lista
 async function sendListMessage(to, text, sections) {
   try {
-    log(`Enviando mensagem com lista para ${to}`);
-    
-    // Verifica se o token e o ID do telefone estão configurados
-    if (!WHATSAPP_TOKEN) {
-      log('⚠️ ERRO CRÍTICO: Token do WhatsApp não configurado! Verifique as variáveis de ambiente.');
+    if (!to || !text || !sections || !sections.length) {
+      log('Erro: Parâmetros incompletos para envio de mensagem com lista');
       return false;
     }
     
-    if (!WHATSAPP_PHONE_ID) {
-      log('⚠️ ERRO CRÍTICO: ID do telefone do WhatsApp não configurado! Verifique as variáveis de ambiente.');
+    log(`Enviando mensagem com lista para ${to}`);
+    
+    // Verifica configurações do WhatsApp
+    if (!checkWhatsAppConfig()) {
+      // Se as configurações não estiverem corretas, simula sucesso em ambiente de desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        log('Ambiente de desenvolvimento: simulando envio bem-sucedido');
+        return true;
+      }
       return false;
     }
     
@@ -156,13 +197,21 @@ async function sendListMessage(to, text, sections) {
             sections: sections
           }
         }
-      }
+      },
+      timeout: 10000 // 10 segundos de timeout
     });
     
     log(`Resposta da API do WhatsApp: ${JSON.stringify(response.data)}`);
     return true;
   } catch (error) {
     log('Erro ao enviar mensagem com lista:', error.response?.data || error.message);
+    
+    // Em ambiente de desenvolvimento, simula sucesso
+    if (process.env.NODE_ENV === 'development') {
+      log('Ambiente de desenvolvimento: simulando envio bem-sucedido');
+      return true;
+    }
+    
     return false;
   }
 }
@@ -170,11 +219,15 @@ async function sendListMessage(to, text, sections) {
 // Função para obter URL de mídia
 async function getMediaUrl(mediaId) {
   try {
+    if (!mediaId) {
+      log('Erro: ID da mídia não fornecido');
+      return null;
+    }
+    
     log(`Obtendo URL da mídia ${mediaId}`);
     
-    // Verifica se o token está configurado
-    if (!WHATSAPP_TOKEN) {
-      log('⚠️ ERRO CRÍTICO: Token do WhatsApp não configurado! Verifique as variáveis de ambiente.');
+    // Verifica configurações do WhatsApp
+    if (!checkWhatsAppConfig()) {
       return null;
     }
     
@@ -183,7 +236,8 @@ async function getMediaUrl(mediaId) {
       url: `${WHATSAPP_API_URL}/${mediaId}`,
       headers: {
         'Authorization': `Bearer ${WHATSAPP_TOKEN}`
-      }
+      },
+      timeout: 10000 // 10 segundos de timeout
     });
     
     log(`URL da mídia obtida: ${response.data.url}`);
@@ -195,7 +249,8 @@ async function getMediaUrl(mediaId) {
       headers: {
         'Authorization': `Bearer ${WHATSAPP_TOKEN}`
       },
-      responseType: 'arraybuffer'
+      responseType: 'arraybuffer',
+      timeout: 10000 // 10 segundos de timeout
     });
     
     // Converte para base64
@@ -210,16 +265,20 @@ async function getMediaUrl(mediaId) {
 // Função para marcar mensagem como lida
 async function markMessageAsRead(messageId) {
   try {
-    log(`Marcando mensagem ${messageId} como lida`);
-    
-    // Verifica se o token e o ID do telefone estão configurados
-    if (!WHATSAPP_TOKEN) {
-      log('⚠️ ERRO CRÍTICO: Token do WhatsApp não configurado! Verifique as variáveis de ambiente.');
+    if (!messageId) {
+      log('Erro: ID da mensagem não fornecido');
       return false;
     }
     
-    if (!WHATSAPP_PHONE_ID) {
-      log('⚠️ ERRO CRÍTICO: ID do telefone do WhatsApp não configurado! Verifique as variáveis de ambiente.');
+    log(`Marcando mensagem ${messageId} como lida`);
+    
+    // Verifica configurações do WhatsApp
+    if (!checkWhatsAppConfig()) {
+      // Se as configurações não estiverem corretas, simula sucesso em ambiente de desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        log('Ambiente de desenvolvimento: simulando marcação bem-sucedida');
+        return true;
+      }
       return false;
     }
     
@@ -234,13 +293,21 @@ async function markMessageAsRead(messageId) {
         messaging_product: 'whatsapp',
         status: 'read',
         message_id: messageId
-      }
+      },
+      timeout: 10000 // 10 segundos de timeout
     });
     
     log(`Resposta da API do WhatsApp: ${JSON.stringify(response.data)}`);
     return true;
   } catch (error) {
     log('Erro ao marcar mensagem como lida:', error.response?.data || error.message);
+    
+    // Em ambiente de desenvolvimento, simula sucesso
+    if (process.env.NODE_ENV === 'development') {
+      log('Ambiente de desenvolvimento: simulando marcação bem-sucedida');
+      return true;
+    }
+    
     return false;
   }
 }
@@ -251,7 +318,7 @@ function splitLongMessage(text) {
   // Vamos usar 3500 para ter uma margem de segurança
   const MAX_LENGTH = 3500;
   
-  // Se a mensagem for curta, retorna ela mesma
+  // Se a mensagem for curta ou não existir, retorna ela mesma
   if (!text || text.length <= MAX_LENGTH) {
     return [text];
   }
@@ -290,5 +357,6 @@ export default {
   sendButtonMessage,
   sendListMessage,
   getMediaUrl,
-  markMessageAsRead
+  markMessageAsRead,
+  checkWhatsAppConfig
 };
