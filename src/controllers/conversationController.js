@@ -237,7 +237,7 @@ async function handleImageMessage(userPhoneNumber, imageData, session) {
     // Solicita o desafio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Agora me diga, com sinceridade...\n\n🌐 *Se você pudesse resolver apenas UM desafio neste momento*,\nqual seria esse desafio que, ao ser superado, traria os resultados que você mais deseja?\n\n(Responda com apenas uma frase)"
+      "Agora me diga, com sinceridade...\n\n🌐 *Se você pudesse escolher apenas UM desafio que, se resolvido, traria os resultados que você mais deseja, qual seria?*\n\n(Responda com apenas uma frase)"
     );
   } catch (error) {
     log('Erro ao processar mensagem de imagem:', error);
@@ -416,7 +416,7 @@ async function processProfile(userPhoneNumber, profileInput, session) {
     // Solicita o desafio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Agora me diga, com sinceridade...\n\n🌐 *Se você pudesse resolver apenas UM desafio neste momento*,\nqual seria esse desafio que, ao ser superado, traria os resultados que você mais deseja?\n\n(Responda com apenas uma frase)"
+      "Agora me diga, com sinceridade...\n\n🌐 *Se você pudesse escolher apenas UM desafio que, se resolvido, traria os resultados que você mais deseja, qual seria?*\n\n(Responda com apenas uma frase)"
     );
   } catch (error) {
     log('Erro ao processar perfil:', error);
@@ -489,7 +489,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
         log('Erro na segunda tentativa de gerar carta:', retryError);
         
         // Usa uma carta genérica em caso de falha
-        letterContent = `*Carta de Consciência para ${session.name || 'Amigo'}*\n\nSua jornada é única e seu desafio atual "${session.challenge || 'que você enfrenta'}" revela muito sobre seu momento. Confie em sua intuição e capacidade de superação. O caminho à frente pode parecer desafiador, mas você tem todos os recursos internos necessários para avançar.\n\nSua presença digital revela uma pessoa com grande potencial. Continue focando em seus objetivos e lembre-se de celebrar cada pequena vitória.\n\nCom carinho,\nConsciênc.IA`;
+        letterContent = `🌱 *Carta de Consciência para ${session.name || 'Amigo'}*\n\nSua jornada é única e seu desafio atual "${session.challenge || 'que você enfrenta'}" revela muito sobre seu momento. Confie em sua intuição e capacidade de superação. O caminho à frente pode parecer desafiador, mas você tem todos os recursos internos necessários para avançar.\n\n✨ Sua presença digital revela uma pessoa com grande potencial. Continue focando em seus objetivos e lembre-se de celebrar cada pequena vitória.\n\n🪷 Com carinho,\nConsciênc.IA`;
       }
     }
     
@@ -577,10 +577,31 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     
     // Envia mensagem de follow-up após a carta
     await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Primeira parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✨ *Sua Carta da Consciênc.IA foi entregue!* ✨\n\nEspero que tenha gostado da sua Carta! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫\n\n🌸 Antes de irmos, uma última sugestão:\nExplore o *Método S.I.M.* (@metodosimbrasil) e o conceito de *Ikigai* (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar *Saúde, Intuição e Mente*,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o *App Oficial do MAPA DO LUCRO*, recomendo que peça agora mesmo o link para a equipe do evento.\n\n*O que você gostaria de fazer agora?*\n\n1️⃣ Digite *IA* para saber mais sobre como a Inteligência Artificial pode transformar seu negócio\n\n2️⃣ Digite *Inspiração* para receber uma dose extra de motivação\n\n3️⃣ Digite *Carta* para receber sua carta novamente\n\n4️⃣ Digite *Não* para encerrar nossa conversa"
+      "✨ *Sua Carta da Consciênc.IA foi entregue!* ✨\n\nEspero que tenha gostado da sua Carta! 🌟"
     );
+    
+    // Pequeno delay entre as mensagens
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Segunda parte do follow-up
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      "Para saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫"
+    );
+    
+    // Pequeno delay entre as mensagens
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Terceira parte do follow-up com o Método SIM
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      "🌸 Antes de irmos, uma última sugestão:\n\nExplore o *Método S.I.M.* (@metodosimbrasil) e o conceito de *Ikigai* (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar *Saúde, Intuição e Mente*,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o *App Oficial do MAPA DO LUCRO*, recomendo que peça agora mesmo o link para a equipe do evento."
+    );
+    
   } catch (error) {
     log('Erro ao processar desafio:', error);
     
@@ -603,27 +624,7 @@ async function processCommand(userPhoneNumber, command, session) {
     const normalizedCommand = normalizeText(command);
     
     // Processa o comando
-    if (normalizedCommand.includes(COMMANDS.IA) || normalizedCommand.includes('ia')) {
-      // Informações sobre IA
-      await whatsappService.sendTextMessage(
-        userPhoneNumber,
-        "🤖 *O Poder da IA nos Negócios* 🤖\n\nA Inteligência Artificial está revolucionando a forma como os negócios operam e se conectam com seus clientes.\n\nNo Programa Consciênc.IA, Renato Hilel e Nuno Arcanjo mostram como usar a IA para:\n\n✅ Automatizar tarefas repetitivas\n✅ Personalizar a comunicação com clientes\n✅ Analisar dados e identificar oportunidades\n✅ Criar conteúdo de alta qualidade em menos tempo\n✅ Escalar operações sem aumentar proporcionalmente os custos\n\nPara saber mais, acesse: https://www.floreon.app.br/conscienc-ia"
-      );
-      
-      // Atualiza o estado da sessão
-      session.state = CONVERSATION_STATES.WAITING_COMMAND;
-      await sessionService.saveSession(userPhoneNumber, session);
-    } else if (normalizedCommand.includes(COMMANDS.INSPIRACAO) || normalizedCommand.includes('inspiracao')) {
-      // Mensagem inspiradora
-      await whatsappService.sendTextMessage(
-        userPhoneNumber,
-        "✨ *Inspiração do Dia* ✨\n\n\"O maior risco não é arriscar demais, é arriscar de menos. No mundo atual, a maior falha é não usar suas capacidades ao máximo, não arriscar o suficiente.\"\n\n- Renato Hilel\n\nLembre-se: Você tem potencial ilimitado. A tecnologia e a IA são apenas ferramentas - o verdadeiro poder está em como você as utiliza para amplificar seu impacto e realizar sua visão única.\n\nPara mais inspiração, siga @renatohilel.oficial e @nunoarcanjo.portal"
-      );
-      
-      // Atualiza o estado da sessão
-      session.state = CONVERSATION_STATES.WAITING_COMMAND;
-      await sessionService.saveSession(userPhoneNumber, session);
-    } else if (normalizedCommand.includes(COMMANDS.CARTA) || normalizedCommand.includes('carta')) {
+    if (normalizedCommand.includes(COMMANDS.CARTA) || normalizedCommand.includes('carta')) {
       // Reenvia a carta
       if (session.letter) {
         await whatsappService.sendTextMessage(
@@ -651,10 +652,10 @@ async function processCommand(userPhoneNumber, command, session) {
       session.state = CONVERSATION_STATES.INITIAL;
       await sessionService.saveSession(userPhoneNumber, session);
     } else {
-      // Comando não reconhecido
+      // Qualquer outro comando, sugere receber uma nova carta
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "Desculpe, não entendi seu comando. Por favor, escolha uma das opções:\n\n1️⃣ Digite *IA* para saber mais sobre como a Inteligência Artificial pode transformar seu negócio\n\n2️⃣ Digite *Inspiração* para receber uma dose extra de motivação\n\n3️⃣ Digite *Carta* para receber sua carta novamente\n\n4️⃣ Digite *Não* para encerrar nossa conversa\n\nOu envie \"Quero receber a minha Carta!\" para reiniciar o processo."
+        "Se quiser receber uma nova carta, basta enviar \"Quero receber a minha Carta!\".\n\nDesejo muito sucesso em sua jornada! ✨"
       );
     }
   } catch (error) {
