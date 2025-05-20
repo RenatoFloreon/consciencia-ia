@@ -34,7 +34,7 @@ router.get('/webhook', (req, res) => {
   }
 });
 
-// Na rota POST /webhook
+// Rota para receber mensagens do WhatsApp
 router.post('/webhook', (req, res) => {
   try {
     log('POST /webhook - Mensagem recebida');
