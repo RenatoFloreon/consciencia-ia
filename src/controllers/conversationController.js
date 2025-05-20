@@ -1,4 +1,4 @@
-import * as sessionService from '../services/sessionService.js';
+import sessionService from '../services/sessionService.js';
 import whatsappService from '../services/whatsappService.js';
 import * as openaiService from '../services/openaiService.js';
 import * as visionAnalysisService from '../services/visionAnalysisService.js';
@@ -579,7 +579,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     await new Promise(resolve => setTimeout(resolve, 2000));
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✨ *Sua Carta da Consciênc.IA foi entregue!* ✨\n\nEspero que tenha gostado da sua Carta! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫\n\n*O que você gostaria de fazer agora?*\n\n1️⃣ Digite *IA* para saber mais sobre como a Inteligência Artificial pode transformar seu negócio\n\n2️⃣ Digite *Inspiração* para receber uma dose extra de motivação\n\n3️⃣ Digite *Carta* para receber sua carta novamente\n\n4️⃣ Digite *Não* para encerrar nossa conversa"
+      "✨ *Sua Carta da Consciênc.IA foi entregue!* ✨\n\nEspero que tenha gostado da sua Carta! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫\n\n🌸 Antes de irmos, uma última sugestão:\nExplore o *Método S.I.M.* (@metodosimbrasil) e o conceito de *Ikigai* (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar *Saúde, Intuição e Mente*,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o *App Oficial do MAPA DO LUCRO*, recomendo que peça agora mesmo o link para a equipe do evento.\n\n*O que você gostaria de fazer agora?*\n\n1️⃣ Digite *IA* para saber mais sobre como a Inteligência Artificial pode transformar seu negócio\n\n2️⃣ Digite *Inspiração* para receber uma dose extra de motivação\n\n3️⃣ Digite *Carta* para receber sua carta novamente\n\n4️⃣ Digite *Não* para encerrar nossa conversa"
     );
   } catch (error) {
     log('Erro ao processar desafio:', error);
