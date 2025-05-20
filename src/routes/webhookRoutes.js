@@ -7,6 +7,8 @@ const router = express.Router();
 // Rota para verificação do webhook do WhatsApp
 router.get('/webhook', (req, res) => {
   try {
+    log('GET /webhook - Solicitação de verificação recebida');
+    
     // Verifica o token de verificação
     const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'floreon2025';
     
@@ -14,6 +16,8 @@ router.get('/webhook', (req, res) => {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
+    
+    log('Parâmetros de verificação:', { mode, token, challenge: !!challenge });
     
     // Verifica se o modo e token são válidos
     if (mode === 'subscribe' && token === verifyToken) {
@@ -33,11 +37,19 @@ router.get('/webhook', (req, res) => {
 // Rota para receber mensagens do WhatsApp
 router.post('/webhook', (req, res) => {
   try {
-    // Processa a mensagem recebida
-    return processMessage(req, res);
+    log('POST /webhook - Mensagem recebida');
+    log('Corpo da requisição:', JSON.stringify(req.body));
+    
+    // Responde imediatamente para evitar timeout
+    res.status(200).send('OK');
+    
+    // Processa a mensagem recebida de forma assíncrona
+    processMessage(req, res).catch(err => {
+      log('Erro ao processar mensagem:', err);
+    });
   } catch (error) {
-    log('Erro no webhook', error);
-    return res.sendStatus(500);
+    log('Erro no webhook:', error);
+    // Já respondemos acima, então não precisamos responder novamente
   }
 });
 
