@@ -6,7 +6,22 @@ import * as visionAnalysisService from '../services/visionAnalysisService.js';
 import * as contentGenerationService from '../services/contentGenerationService.js';
 import { log } from '../utils/logger.js';
 
-// Função principal para processar mensagens recebidas
+// Estados da conversa
+const CONVERSATION_STATES = {
+  INITIAL: 'initial',
+  WAITING_NAME: 'waiting_name',
+  WAITING_BUSINESS: 'waiting_business',
+  WAITING_PROFILE: 'waiting_profile',
+  WAITING_CHALLENGE: 'waiting_challenge',
+  GENERATING_LETTER: 'generating_letter',
+  LETTER_DELIVERED: 'letter_delivered'
+};
+
+/**
+ * Processa mensagens recebidas do webhook do WhatsApp
+ * @param {Object} req - Objeto de requisição Express
+ * @param {Object} res - Objeto de resposta Express
+ */
 export async function processMessage(req, res) {
   try {
     // Responde imediatamente para evitar timeout do WhatsApp
@@ -26,11 +41,30 @@ export async function processMessage(req, res) {
     // Registra a mensagem recebida para depuração
     log(`Mensagem recebida de ${phoneNumber}: ${JSON.stringify(message)}`);
 
+    // Obtém ou cria a sessão do usuário
+    let session = await sessionService.getSession(phoneNumber);
+    
+    // Garante que a sessão existe e tem um estado válido
+    if (!session) {
+      session = {
+        phoneNumber: phoneNumber,
+        state: CONVERSATION_STATES.INITIAL,
+        startTimestamp: Date.now()
+      };
+      await sessionService.saveSession(phoneNumber, session);
+    }
+    
+    // Se a sessão não tiver um estado definido, inicializa com INITIAL
+    if (!session.state) {
+      session.state = CONVERSATION_STATES.INITIAL;
+      await sessionService.saveSession(phoneNumber, session);
+    }
+
     // Processa a mensagem com base no tipo
     if (message.type === 'text') {
-      await handleTextMessage(phoneNumber, message.text.body);
+      await handleTextMessage(phoneNumber, message.text.body, session);
     } else if (message.type === 'image') {
-      await handleImageMessage(phoneNumber, message.image);
+      await handleImageMessage(phoneNumber, message.image, session);
     } else {
       // Tipo de mensagem não suportado
       await whatsappService.sendTextMessage(
@@ -44,12 +78,26 @@ export async function processMessage(req, res) {
 }
 
 // Processa mensagens de texto
-async function handleTextMessage(phoneNumber, text) {
+async function handleTextMessage(phoneNumber, text, session) {
   try {
     log(`Processando mensagem de texto de ${phoneNumber}: "${text}"`);
     
-    // Obtém ou cria a sessão do usuário
-    const session = await sessionService.getSession(phoneNumber);
+    // Garante que a sessão existe e tem um estado válido
+    if (!session) {
+      session = {
+        phoneNumber: phoneNumber,
+        state: CONVERSATION_STATES.INITIAL,
+        startTimestamp: Date.now()
+      };
+      await sessionService.saveSession(phoneNumber, session);
+    }
+    
+    // Se a sessão não tiver um estado definido, inicializa com INITIAL
+    if (!session.state) {
+      session.state = CONVERSATION_STATES.INITIAL;
+      await sessionService.saveSession(phoneNumber, session);
+    }
+    
     log(`Estado da sessão: ${session.state}`);
     
     // Comandos especiais
@@ -75,19 +123,19 @@ async function handleTextMessage(phoneNumber, text) {
     
     // Processa a mensagem com base no estado da sessão
     switch (session.state) {
-      case 'INITIAL':
+      case CONVERSATION_STATES.INITIAL:
         if (lowerText.includes('carta') || lowerText.includes('receber') || lowerText.includes('quero')) {
           await startConversation(phoneNumber, session);
         } else {
-          await sendWelcomeMessage(phoneNumber);
+          await sendWelcomeMessage(phoneNumber, session);
         }
         break;
         
-      case 'WAITING_NAME':
+      case CONVERSATION_STATES.WAITING_NAME:
         await handleNameInput(phoneNumber, text, session);
         break;
         
-      case 'WAITING_BUSINESS':
+      case CONVERSATION_STATES.WAITING_BUSINESS:
         if (lowerText === 'pular') {
           await askForProfileChoice(phoneNumber, session);
         } else {
@@ -97,24 +145,23 @@ async function handleTextMessage(phoneNumber, text) {
         }
         break;
         
-      case 'WAITING_PROFILE_CHOICE':
+      case CONVERSATION_STATES.WAITING_PROFILE:
         await handleProfileChoice(phoneNumber, text, session);
         break;
         
-      case 'WAITING_PROFILE_URL':
-        await handleProfileUrl(phoneNumber, text, session);
-        break;
-        
-      case 'WAITING_CHALLENGE':
+      case CONVERSATION_STATES.WAITING_CHALLENGE:
         await handleChallengeInput(phoneNumber, text, session);
         break;
         
-      case 'LETTER_DELIVERED':
+      case CONVERSATION_STATES.LETTER_DELIVERED:
         await sendHelpMessage(phoneNumber);
         break;
         
       default:
-        await sendWelcomeMessage(phoneNumber);
+        // Estado desconhecido, reinicia a conversa
+        session.state = CONVERSATION_STATES.INITIAL;
+        await sessionService.saveSession(phoneNumber, session);
+        await sendWelcomeMessage(phoneNumber, session);
         break;
     }
   } catch (error) {
@@ -127,13 +174,27 @@ async function handleTextMessage(phoneNumber, text) {
 }
 
 // Processa mensagens de imagem
-async function handleImageMessage(phoneNumber, image) {
+async function handleImageMessage(phoneNumber, image, session) {
   try {
     log(`Processando imagem de ${phoneNumber}`);
     
-    const session = await sessionService.getSession(phoneNumber);
+    // Garante que a sessão existe e tem um estado válido
+    if (!session) {
+      session = {
+        phoneNumber: phoneNumber,
+        state: CONVERSATION_STATES.INITIAL,
+        startTimestamp: Date.now()
+      };
+      await sessionService.saveSession(phoneNumber, session);
+    }
     
-    if (session.state === 'WAITING_PROFILE_IMAGE') {
+    // Se a sessão não tiver um estado definido, inicializa com INITIAL
+    if (!session.state) {
+      session.state = CONVERSATION_STATES.INITIAL;
+      await sessionService.saveSession(phoneNumber, session);
+    }
+    
+    if (session.state === CONVERSATION_STATES.WAITING_PROFILE) {
       // Analisa a imagem do perfil
       const imageUrl = image.id;
       
@@ -157,7 +218,7 @@ async function handleImageMessage(phoneNumber, image) {
       const imageAnalysis = await visionAnalysisService.analyzeImageFromUrl(mediaUrl);
       
       session.profileImageAnalysis = imageAnalysis;
-      session.state = 'WAITING_CHALLENGE';
+      session.state = CONVERSATION_STATES.WAITING_CHALLENGE;
       await sessionService.saveSession(phoneNumber, session);
       
       // Pergunta sobre o desafio
@@ -180,7 +241,7 @@ async function handleImageMessage(phoneNumber, image) {
 // Inicia a conversa para gerar a Carta de Consciência
 async function startConversation(phoneNumber, session) {
   try {
-    session.state = 'WAITING_NAME';
+    session.state = CONVERSATION_STATES.WAITING_NAME;
     await sessionService.saveSession(phoneNumber, session);
     
     await whatsappService.sendTextMessage(
@@ -194,10 +255,9 @@ async function startConversation(phoneNumber, session) {
 }
 
 // Envia mensagem de boas-vindas
-async function sendWelcomeMessage(phoneNumber) {
+async function sendWelcomeMessage(phoneNumber, session) {
   try {
-    const session = await sessionService.getSession(phoneNumber);
-    session.state = 'INITIAL';
+    session.state = CONVERSATION_STATES.INITIAL;
     await sessionService.saveSession(phoneNumber, session);
     
     await whatsappService.sendTextMessage(
@@ -214,7 +274,7 @@ async function sendWelcomeMessage(phoneNumber) {
 async function handleNameInput(phoneNumber, name, session) {
   try {
     session.userName = name;
-    session.state = 'WAITING_BUSINESS';
+    session.state = CONVERSATION_STATES.WAITING_BUSINESS;
     await sessionService.saveSession(phoneNumber, session);
     
     await whatsappService.sendTextMessage(
@@ -230,7 +290,7 @@ async function handleNameInput(phoneNumber, name, session) {
 // Pergunta sobre a escolha do perfil
 async function askForProfileChoice(phoneNumber, session) {
   try {
-    session.state = 'WAITING_PROFILE_CHOICE';
+    session.state = CONVERSATION_STATES.WAITING_PROFILE;
     await sessionService.saveSession(phoneNumber, session);
     
     await whatsappService.sendTextMessage(
@@ -252,7 +312,7 @@ async function handleProfileChoice(phoneNumber, text, session) {
       // Usuário enviou um nome de usuário
       const username = text.trim();
       session.profileUrl = username;
-      session.state = 'WAITING_CHALLENGE';
+      session.state = CONVERSATION_STATES.WAITING_CHALLENGE;
       await sessionService.saveSession(phoneNumber, session);
       
       await whatsappService.sendTextMessage(
@@ -267,7 +327,7 @@ async function handleProfileChoice(phoneNumber, text, session) {
       await handleProfileUrl(phoneNumber, text, session);
     } else {
       // Instrui o usuário a enviar uma imagem
-      session.state = 'WAITING_PROFILE_IMAGE';
+      session.state = CONVERSATION_STATES.WAITING_PROFILE;
       await sessionService.saveSession(phoneNumber, session);
       
       await whatsappService.sendTextMessage(
@@ -285,7 +345,7 @@ async function handleProfileChoice(phoneNumber, text, session) {
 async function handleProfileUrl(phoneNumber, url, session) {
   try {
     session.profileUrl = url;
-    session.state = 'WAITING_CHALLENGE';
+    session.state = CONVERSATION_STATES.WAITING_CHALLENGE;
     await sessionService.saveSession(phoneNumber, session);
     
     // Tenta fazer scraping do perfil
@@ -325,7 +385,7 @@ async function askForChallenge(phoneNumber) {
 async function handleChallengeInput(phoneNumber, challenge, session) {
   try {
     session.challenge = challenge;
-    session.state = 'GENERATING_LETTER';
+    session.state = CONVERSATION_STATES.GENERATING_LETTER;
     await sessionService.saveSession(phoneNumber, session);
     
     // Envia mensagem de processamento
@@ -347,7 +407,7 @@ async function handleChallengeInput(phoneNumber, challenge, session) {
     
     // Atualiza o estado da sessão
     session.letterContent = letterContent;
-    session.state = 'LETTER_DELIVERED';
+    session.state = CONVERSATION_STATES.LETTER_DELIVERED;
     await sessionService.saveSession(phoneNumber, session);
     
     // Envia mensagem de conclusão
@@ -446,13 +506,23 @@ async function sendHelpMessage(phoneNumber) {
 // Processa o comando IA
 async function handleIACommand(phoneNumber, session) {
   try {
+    // Garante que a sessão existe e tem um estado válido
+    if (!session) {
+      session = {
+        phoneNumber: phoneNumber,
+        state: CONVERSATION_STATES.INITIAL,
+        startTimestamp: Date.now()
+      };
+      await sessionService.saveSession(phoneNumber, session);
+    }
+    
     if (!session.challenge) {
       await whatsappService.sendTextMessage(
         phoneNumber,
         "Para que eu possa te ajudar com sugestões de IA, preciso saber qual é o seu desafio atual. Por favor, compartilhe comigo qual é o seu maior desafio no momento."
       );
       
-      session.state = 'WAITING_CHALLENGE';
+      session.state = CONVERSATION_STATES.WAITING_CHALLENGE;
       await sessionService.saveSession(phoneNumber, session);
       return;
     }
@@ -481,13 +551,23 @@ async function handleIACommand(phoneNumber, session) {
 // Processa o comando Inspiração
 async function handleInspirationCommand(phoneNumber, session) {
   try {
+    // Garante que a sessão existe e tem um estado válido
+    if (!session) {
+      session = {
+        phoneNumber: phoneNumber,
+        state: CONVERSATION_STATES.INITIAL,
+        startTimestamp: Date.now()
+      };
+      await sessionService.saveSession(phoneNumber, session);
+    }
+    
     if (!session.challenge) {
       await whatsappService.sendTextMessage(
         phoneNumber,
         "Para que eu possa te enviar uma inspiração personalizada, preciso saber qual é o seu desafio atual. Por favor, compartilhe comigo qual é o seu maior desafio no momento."
       );
       
-      session.state = 'WAITING_CHALLENGE';
+      session.state = CONVERSATION_STATES.WAITING_CHALLENGE;
       await sessionService.saveSession(phoneNumber, session);
       return;
     }
@@ -516,12 +596,21 @@ async function handleInspirationCommand(phoneNumber, session) {
 // Processa o comando Não
 async function handleNoCommand(phoneNumber, session) {
   try {
+    // Garante que a sessão existe e tem um estado válido
+    if (!session) {
+      session = {
+        phoneNumber: phoneNumber,
+        state: CONVERSATION_STATES.INITIAL,
+        startTimestamp: Date.now()
+      };
+    }
+    
     await whatsappService.sendTextMessage(
       phoneNumber,
       "Tudo bem! Estou aqui para ajudar quando precisar.\n\nSe quiser receber sua Carta da Consciênc.IA personalizada, é só me avisar digitando *\"Quero receber a minha Carta!\"*"
     );
     
-    session.state = 'INITIAL';
+    session.state = CONVERSATION_STATES.INITIAL;
     await sessionService.saveSession(phoneNumber, session);
   } catch (error) {
     log('Erro ao processar comando Não:', error);
