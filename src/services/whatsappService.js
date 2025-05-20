@@ -13,7 +13,7 @@ const WHATSAPP_API_URL = `https://graph.facebook.com/${WHATSAPP_API_VERSION}`;
  * @param {string} text - Texto da mensagem
  * @returns {Promise<Object>} - Resposta da API
  */
-async function sendTextMessage(to, text) {
+async function sendTextMessage(to, text ) {
   try {
     if (!to || !text) {
       throw new Error('Número de telefone e texto são obrigatórios');
