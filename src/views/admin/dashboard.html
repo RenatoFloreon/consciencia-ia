@@ -1,427 +1,103 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Consciênc.IA Admin Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel | Conscienc.IA</title>
   <style>
-    :root {
-      --primary-color: #6a11cb;
-      --secondary-color: #2575fc;
-      --success-color: #28a745;
-      --warning-color: #ffc107;
-      --info-color: #17a2b8;
-      --danger-color: #dc3545;
-    }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f5f7fa;
-      min-height: 100vh;
-      display: flex;
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: #F1EFEA;
+      color: #282831;
     }
-    /* Sidebar styles */
-    .sidebar {
-      width: 250px;
-      background: var(--primary-color);
-      color: #fff;
-      min-height: 100vh;
-      position: fixed;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    }
-    .sidebar-header {
-      padding: 1.5rem 1rem;
-      font-weight: 700;
-      font-size: 1.25rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    .sidebar-menu a {
-      display: block;
-      padding: 0.75rem 1.5rem;
-      color: rgba(255, 255, 255, 0.8);
-      text-decoration: none;
-      transition: background 0.3s ease;
-    }
-    .sidebar-menu a:hover, .sidebar-menu a.active {
-      background: rgba(0, 0, 0, 0.1);
-      color: #fff;
-    }
-    .sidebar-menu i {
-      margin-right: 0.5rem;
-      width: 20px;
-      text-align: center;
-    }
-    /* Main content styles */
-    .main-content {
-      flex: 1;
-      margin-left: 250px;
-      padding: 2rem;
-    }
-    .page-header {
-      margin-bottom: 2rem;
-    }
-    /* Stat cards */
-    .stats-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .stat-card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 1.5rem;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      text-align: center;
-      transition: transform 0.3s ease;
-    }
-    .stat-card:hover {
-      transform: translateY(-3px);
-    }
-    .stat-card i {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      opacity: 0.8;
-    }
-    .stat-value {
-      font-size: 1.75rem;
-      font-weight: 700;
-    }
-    .stat-label {
-      font-size: 0.9rem;
-      opacity: 0.8;
-    }
-    .stat-card.purple { background: var(--primary-color); color: #fff; }
-    .stat-card.green { background: var(--success-color); color: #fff; }
-    .stat-card.blue { background: var(--info-color); color: #fff; }
-    .stat-card.yellow { background: var(--warning-color); color: #212529; }
-    /* Data table */
-    .data-table-container {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      padding: 1rem;
-    }
-    .table-responsive { overflow-x: auto; }
-    table.table {
+    table {
       width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
     }
-    table.table th, table.table td {
-      padding: 0.75rem;
-      vertical-align: middle;
-      border-bottom: 1px solid #dee2e6;
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
     }
-    table.table th {
-      background: #f8f9fa;
+    th {
+      background-color: #8834DC;
+      color: #fff;
       text-align: left;
     }
-    table.table tbody tr:hover {
-      background: #f8f9fa;
+    h1 {
+      color: #8834DC;
     }
-    .badge {
-      padding: 0.35em 0.65em;
+    .tag {
+      padding: 4px 8px;
       border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
+      font-size: 12px;
     }
-    .badge.completed { background: var(--success-color); color: #fff; }
-    .badge.pending { background: var(--warning-color); color: #212529; }
-    .action-buttons {
-      display: flex;
-      gap: 0.5rem;
+    .tag-print {
+      background-color: #2A98F9;
+      color: white;
     }
-    .btn-action {
-      width: 32px;
-      height: 32px;
-      border: none;
-      border-radius: 4px;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: opacity 0.2s;
+    .tag-image {
+      background-color: #A192CF;
+      color: white;
     }
-    .btn-action:hover { opacity: 0.9; }
-    .btn-view { background: var(--info-color); }
-    .btn-download { background: var(--primary-color); }
-    /* Modal styles */
-    .modal-content {
-      border-radius: 8px;
-    }
-    .modal-header {
-      background: var(--primary-color);
-      color: #fff;
-      border-radius: 8px 8px 0 0;
-    }
-    .modal-title { font-weight: 600; }
-    .detail-title {
-      font-weight: 600;
-      color: var(--primary-color);
-      margin: 1rem 0 0.5rem;
-    }
-    /* Responsive adjustments */
-    @media(max-width: 992px) {
-      .sidebar { width: 200px; }
-      .main-content { margin-left: 200px; }
-    }
-    @media(max-width: 768px) {
-      body { display: block; }
-      .sidebar { width: 100%; position: relative; min-height: auto; }
-      .main-content { margin-left: 0; padding: 1rem; }
-      .stats-cards { grid-template-columns: 1fr; }
+    .tag-text {
+      background-color: #F11E3A;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <i class="bi bi-speedometer2"></i> Consciênc.IA Admin
-    </div>
-    <div class="sidebar-menu">
-      <a href="#" class="active"><i class="bi bi-house-door-fill"></i> Dashboard</a>
-      <a href="/admin/export/json"><i class="bi bi-filetype-json"></i> Exportar JSON</a>
-      <a href="/admin/export/csv"><i class="bi bi-filetype-csv"></i> Exportar CSV</a>
-      <a href="/admin/logout"><i class="bi bi-box-arrow-right"></i> Sair</a>
-    </div>
-  </div>
-  <!-- Main Content -->
-  <div class="main-content">
-    <div class="page-header">
-      <h1>Dashboard</h1>
-    </div>
-    <!-- Stat Cards -->
-    <div class="stats-cards">
-      <div class="stat-card purple">
-        <i class="bi bi-people-fill"></i>
-        <div class="stat-value" id="total-interactions">--</div>
-        <div class="stat-label">Total de Interações</div>
-      </div>
-      <div class="stat-card green">
-        <i class="bi bi-envelope-paper-fill"></i>
-        <div class="stat-value" id="letters-delivered">--</div>
-        <div class="stat-label">Cartas Entregues</div>
-      </div>
-      <div class="stat-card blue">
-        <i class="bi bi-person-check-fill"></i>
-        <div class="stat-value" id="profiles-analyzed">--</div>
-        <div class="stat-label">Perfis Analisados</div>
-      </div>
-      <div class="stat-card yellow">
-        <i class="bi bi-chat-dots-fill"></i>
-        <div class="stat-value" id="followup-questions">--</div>
-        <div class="stat-label">Perguntas de Acomp.</div>
-      </div>
-    </div>
-    <!-- Users Table -->
-    <div class="data-table-container">
-      <div class="table-responsive">
-        <table class="table" id="interactions-table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Telefone</th>
-              <th>Tipo Input</th>
-              <th>Perfil</th>
-              <th>Imagem</th>
-              <th>Desafio Negócio</th>
-              <th>Desafio Pessoal</th>
-              <th>Estado</th>
-              <th>Início</th>
-              <th>Conclusão</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="interactions-data">
-            <!-- Data rows inserted via script -->
-          </tbody>
-        </table>
-      </div>
-      <div class="d-flex justify-content-between align-items-center mt-2">
-        <span id="entries-info">Mostrando 0 de 0 registros</span>
-        <button id="load-more" class="btn btn-primary btn-sm" disabled>Carregar Mais</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de Detalhes -->
-  <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Detalhes da Interação</h5>
-          <button type="button" class="btn-close btn-light" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body" id="modal-content">
-          <!-- Details content will be inserted via script -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bootstrap Bundle (with Popper for modal) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Dashboard Script -->
-  <script>
-    let allInteractions = [];
-    let filteredInteractions = [];
-    let currentPage = 1;
-    const pageSize = 10;
-
-    // Fetch interactions and stats on load
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        const resInteractions = await fetch('/admin/api/interactions');
-        allInteractions = await resInteractions.json();
-        filteredInteractions = [...allInteractions];
-      } catch (e) {
-        console.error('Erro ao buscar interações:', e);
-        return;
-      }
-      try {
-        const resStats = await fetch('/admin/api/stats');
-        const stats = await resStats.json();
-        document.getElementById('total-interactions').textContent = stats.totalInteractions;
-        document.getElementById('letters-delivered').textContent = stats.lettersDelivered;
-        document.getElementById('profiles-analyzed').textContent = stats.profilesAnalyzed;
-        document.getElementById('followup-questions').textContent = stats.followupQuestions;
-      } catch (e) {
-        console.error('Erro ao buscar estatísticas:', e);
-      }
-      renderTablePage(); // Render initial page of table
-    });
-
-    // Render table page based on currentPage and filteredInteractions
-    function renderTablePage() {
-      const tableBody = document.getElementById('interactions-data');
-      const start = (currentPage - 1) * pageSize;
-      const end = Math.min(start + pageSize, filteredInteractions.length);
-      // Populate rows
-      let rowsHtml = '';
-      for (let i = start; i < end; i++) {
-        const inter = filteredInteractions[i];
-        const startTime = inter.startTimestamp ? new Date(inter.startTimestamp) : null;
-        const endTime = inter.timestamp ? new Date(inter.timestamp) : null;
-        const formattedStart = startTime ? formatDate(startTime) : '-';
-        const formattedEnd = (inter.type === 'letter_delivered' && endTime) ? formatDate(endTime) : (inter.type === 'followup_question' ? '-' : '-');
-        // Determine status badge
-        let statusBadge = '<span class="badge ';
-        if (inter.type === 'letter_delivered') {
-          statusBadge = '<span class="badge completed">COMPLETED</span>';
-        } else if (inter.type === 'followup_question') {
-          statusBadge = '<span class="badge pending">PENDING</span>';
-        } else {
-          statusBadge = '<span class="badge pending">PENDING</span>';
-        }
-        // Shorten Profile (display only @user or ID)
-        let profileDisplay = '-';
-        if (inter.profileUrl) {
-          const match = inter.profileUrl.match(/instagram\.com\/([^\/]+)/) || inter.profileUrl.match(/linkedin\.com\/in\/([^\/]+)/);
-          profileDisplay = match ? match[1] : inter.profileUrl;
-        }
-        // Image preview (if image input)
-        let imagePreview = inter.imageId ? `<a href="${inter.imageId}" target="_blank">Ver Imagem</a>` : '-';
-        rowsHtml += `<tr>
-          <td>${inter.name || '-'}</td>
-          <td>${inter.phoneNumber || '-'}</td>
-          <td>${(inter.inputType || '').toUpperCase() || '-'}</td>
-          <td>${profileDisplay}</td>
-          <td>${imagePreview}</td>
-          <td>${inter.businessChallenge || '-'}</td>
-          <td>${inter.personalChallenge || '-'}</td>
-          <td>${statusBadge}</td>
-          <td>${formattedStart}</td>
-          <td>${formattedEnd}</td>
+  <h1>Painel de Participantes - Consciênc.IA</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Telefone</th>
+        <th>Input</th>
+        <th>Imagem</th>
+        <th>Desafio</th>
+        <th>Carta</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach(function(user) { %>
+        <tr>
+          <td><%= user.name || '-' %></td>
+          <td><%= user.phone || '-' %></td>
           <td>
-            <div class="action-buttons">
-              <button class="btn-action btn-view" data-index="${i}" data-bs-toggle="modal" data-bs-target="#detailsModal"><i class="bi bi-eye"></i></button>
-              <button class="btn-action btn-download" onclick="downloadInteraction(${i})"><i class="bi bi-file-earmark-text"></i></button>
-            </div>
+            <% if (user.inputType === 'print') { %>
+              <span class="tag tag-print">📸 Print</span>
+            <% } else if (user.inputType === 'image') { %>
+              <span class="tag tag-image">🧠 Imagem</span>
+            <% } else if (user.inputType === 'text') { %>
+              <span class="tag tag-text">🔤 Texto</span>
+            <% } else { %>
+              -
+            <% } %>
           </td>
-        </tr>`;
-      }
-      if (currentPage === 1) tableBody.innerHTML = ''; // clear on first page load or filter reset
-      tableBody.insertAdjacentHTML('beforeend', rowsHtml);
-      // Update entries info and load-more button
-      const entriesInfo = document.getElementById('entries-info');
-      entriesInfo.textContent = `Mostrando ${end} de ${filteredInteractions.length} registros`;
-      const loadMoreBtn = document.getElementById('load-more');
-      loadMoreBtn.disabled = end >= filteredInteractions.length;
-    }
-
-    // Load more button event
-    document.getElementById('load-more').addEventListener('click', () => {
-      currentPage++;
-      renderTablePage();
-    });
-
-    // Format date util
-    function formatDate(date) {
-      return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    // Show interaction details in modal
-    document.addEventListener('click', (e) => {
-      if (e.target.closest('.btn-view')) {
-        const index = e.target.closest('.btn-view').getAttribute('data-index');
-        showDetails(filteredInteractions[index]);
-      }
-    });
-
-    function showDetails(inter) {
-      const modalContent = document.getElementById('modal-content');
-      if (!inter) {
-        modalContent.innerHTML = "<p>Interação não encontrada.</p>";
-        return;
-      }
-      const startDate = inter.startTimestamp ? formatDate(new Date(inter.startTimestamp)) : '-';
-      const endDate = inter.timestamp ? formatDate(new Date(inter.timestamp)) : '-';
-      let contentHtml = `
-        <h4 class="detail-title">Informações Gerais</h4>
-        <p><strong>Nome:</strong> ${inter.name || '-'}</p>
-        <p><strong>E-mail:</strong> ${inter.email || '-'}</p>
-        <p><strong>Telefone:</strong> ${inter.phoneNumber || '-'}</p>
-        <p><strong>Data/Hora Início:</strong> ${startDate}</p>
-        <p><strong>Data/Hora Conclusão:</strong> ${endDate}</p>
-        <p><strong>Tipo de Interação:</strong> ${inter.type === 'letter_delivered' ? 'Carta Entregue' : inter.type === 'followup_question' ? 'Pergunta Acompanhamento' : inter.type}</p>`;
-      if (inter.type === 'letter_delivered') {
-        contentHtml += `
-          <h4 class="detail-title">Detalhes da Carta</h4>
-          <p><strong>Tipo de Input:</strong> ${inter.inputType ? inter.inputType.toUpperCase() : '-'}</p>
-          <p><strong>Perfil Analisado:</strong> ${inter.profileUrl || inter.imageId ? (inter.profileUrl || '(Imagem)') : '-'}</p>
-          <p><strong>Desafio Negócio:</strong> ${inter.businessChallenge || '-'}</p>
-          <p><strong>Desafio Pessoal:</strong> ${inter.personalChallenge || '-'}</p>
-          <p><strong>Carta Gerada:</strong></p>
-          <div class="p-3 border rounded" style="white-space: pre-wrap;">${inter.letterContent || '(conteúdo não disponível)'}</div>`;
-      } else if (inter.type === 'followup_question') {
-        contentHtml += `
-          <h4 class="detail-title">Pergunta de Acompanhamento</h4>
-          <p><strong>Pergunta (Desafio):</strong> ${inter.question || '-'}</p>
-          <p><strong>Resposta da IA:</strong></p>
-          <div class="p-3 border rounded" style="white-space: pre-wrap;">${inter.answer || '(resposta não disponível)'}</div>`;
-      }
-      modalContent.innerHTML = contentHtml;
-    }
-
-    // Download individual interaction as JSON
-    function downloadInteraction(index) {
-      const inter = filteredInteractions[index];
-      if (!inter) return;
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(inter, null, 2));
-      const dlAnchor = document.createElement('a');
-      dlAnchor.setAttribute("href", dataStr);
-      dlAnchor.setAttribute("download", `interacao_${inter.phoneNumber || 'user'}_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(dlAnchor);
-      dlAnchor.click();
-      dlAnchor.remove();
-    }
-  </script>
+          <td>
+            <% if (user.imageUrl) { %>
+              <a href="<%= user.imageUrl %>" target="_blank">Visualizar</a>
+            <% } else { %>
+              -
+            <% } %>
+          </td>
+          <td><%= user.challenge || '-' %></td>
+          <td>
+            <% if (user.carta) { %>
+              <details>
+                <summary>Ver Carta</summary>
+                <pre><%= user.carta %></pre>
+              </details>
+            <% } else { %>
+              -
+            <% } %>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
 </body>
 </html>
