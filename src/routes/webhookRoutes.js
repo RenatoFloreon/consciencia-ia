@@ -40,19 +40,27 @@ router.post('/webhook', (req, res) => {
     log('POST /webhook - Mensagem recebida');
     log('Corpo da requisição:', JSON.stringify(req.body));
     
-    // Responde imediatamente para evitar timeout
-    res.status(200).send('OK');
+    // Não responde imediatamente, deixa o controller responder
+    // Isso é importante para que o processMessage possa enviar a resposta HTTP
     
-    // Processa a mensagem recebida de forma assíncrona
-    processMessage(req, req.body)  // Modificado para passar o corpo da requisição diretamente
+    // Processa a mensagem recebida
+    processMessage(req, res)
       .then(() => {
         log('Mensagem processada com sucesso');
       })
       .catch(err => {
         log('Erro ao processar mensagem:', err);
+        // Se ocorrer um erro e ainda não respondemos, responde com erro
+        if (!res.headersSent) {
+          res.status(500).send('ERROR');
+        }
       });
   } catch (error) {
     log('Erro no webhook:', error);
+    // Se ocorrer um erro e ainda não respondemos, responde com erro
+    if (!res.headersSent) {
+      res.status(500).send('ERROR');
+    }
   }
 });
 
