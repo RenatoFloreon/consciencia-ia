@@ -1,100 +1,46 @@
-/**
- * @fileoverview Serviço para análise de imagens de perfil usando GPT-4 Vision.
- * Converte a imagem de perfil em uma mensagem para o modelo GPT-4 Vision para obter descrições e classificações.
- */
-import OpenAI from 'openai';
-import config from '../config/env.js';
-import { logInfo, logError } from '../utils/logger.js';
+import axios from 'axios';
 
-// Inicializar cliente OpenAI (modelo com visão, se disponível)
-let openai;
-if (config.OPENAI_API_KEY) {
-  openai = new OpenAI({
-    apiKey: config.OPENAI_API_KEY,
-    organization: config.OPENAI_ORGANIZATION
-  });
-}
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+const WA_AUTH_HEADER = { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` };
 
-/**
- * Analisa uma imagem de perfil (via URL) usando GPT-4 Vision e retorna uma descrição textual concisa.
- * @param {string} imageUrl - URL da imagem de perfil a ser analisada.
- * @returns {Promise<string|null>} Descrição gerada ou null se não for possível analisar.
- */
-export async function analyzeProfileImage(imageUrl) {
-  logInfo('VISION_ANALYSIS', `Analisando imagem de perfil: ${imageUrl}`);
+// Fetch image content from WhatsApp API and analyze via OpenAI (GPT-4 Vision)
+export async function analyzeImage(mediaId) {
   try {
-    if (!openai) {
-      logError('VISION_ANALYSIS', 'OpenAI não inicializada para análise de imagem.');
-      return null;
-    }
-    if (!imageUrl) {
-      return null;
-    }
-    // Montar prompt de análise de imagem de perfil
-    const prompt = `
-      Analise esta imagem de perfil e descreva de forma concisa:
-      1. O que a pessoa ou imagem transmite (ações, ambiente, estilo)
-      2. A impressão geral (profissional, casual, artística, etc.)
-      3. Qualquer elemento notável (objetos, símbolos, texto visível, marcas)
-      
-      Responda em poucas frases, em português.`;
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: imageUrl } }
-          ]
-        }
-      ],
-      max_tokens: 300
-    });
-    const description = response.choices[0].message.content;
-    logInfo('VISION_ANALYSIS', 'Descrição da imagem gerada com sucesso.');
-    return description || null;
-  } catch (error) {
-    logError('VISION_ANALYSIS', `Erro na análise de imagem: ${error.message}`, error);
-    return null;
-  }
-}
-
-/**
- * Classifica o tipo de imagem enviada (foto de perfil ou captura de tela de perfil) usando GPT-4 Vision.
- * @param {string} imageUrl - URL da imagem a ser classificada.
- * @returns {Promise<string|null>} 'screenshot' se for captura de tela, 'photo' se for foto comum, ou null se indeterminado.
- */
-export async function classifyImageType(imageUrl) {
-  logInfo('VISION_ANALYSIS', `Classificando tipo da imagem: ${imageUrl}`);
-  try {
-    if (!openai) {
-      return null;
-    }
-    const prompt = "A imagem fornecida é uma captura de tela de um perfil de rede social (contendo elementos da interface) ou uma fotografia comum? Responda apenas 'screenshot' ou 'photo'.";
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: imageUrl } }
-          ]
-        }
-      ],
-      max_tokens: 10
-    });
-    const answer = response.choices[0].message.content.toLowerCase().trim();
-    if (answer.includes('screenshot') || answer.includes('captura')) {
-      return 'screenshot';
-    }
-    if (answer.includes('photo') || answer.includes('foto')) {
-      return 'photo';
-    }
-    return null;
-  } catch (error) {
-    logError('VISION_ANALYSIS', `Erro na classificação da imagem: ${error.message}`, error);
-    return null;
+    // Step 1: Get a temporary URL for the media
+    const mediaUrlRes = await axios.get(`https://graph.facebook.com/v17.0/${mediaId}`, { headers: WA_AUTH_HEADER });
+    const mediaUrl = mediaUrlRes.data.url;
+    // Step 2: Download the image bytes
+    const imageRes = await axios.get(mediaUrl, { headers: WA_AUTH_HEADER, responseType: 'arraybuffer' });
+    const imageBuffer = imageRes.data;
+    const base64Image = imageBuffer.toString('base64');
+    // Construct a data URL for the image
+    const mimeType = imageRes.headers['content-type'] || 'image/jpeg';
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+    // Step 3: Call OpenAI GPT-4 with image and prompt to analyze profile
+    const messages = [
+      { role: "user", content: [
+          { type: "text", text: "Analise esta imagem de perfil digital e descreva brevemente características e interesses da pessoa:" },
+          { type: "image", image: { base64: dataUrl } }
+        ]
+      }
+    ];
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`
+    };
+    const body = {
+      model: "gpt-4",
+      messages: messages,
+      temperature: 0.5,
+      max_tokens: 500
+    };
+    const response = await axios.post(OPENAI_API_URL, body, { headers });
+    const analysisText = response.data.choices[0].message.content;
+    // Return the analysis text (trim to remove any leading/trailing whitespace)
+    return analysisText.trim();
+  } catch (err) {
+    console.error("Vision analysis failed:", err.response?.data || err.message);
+    return '';
   }
 }
