@@ -12,12 +12,20 @@ import { isValidUrl, normalizeProfileUrl } from '../utils/validators.js';
 const CONVERSATION_STATES = {
   INITIAL: 'initial',
   WAITING_NAME: 'waiting_name',
-  WAITING_EMAIL: 'waiting_email',
+  WAITING_BUSINESS: 'waiting_business',
   WAITING_PROFILE: 'waiting_profile',
   WAITING_CHALLENGE: 'waiting_challenge',
   GENERATING_LETTER: 'generating_letter',
   LETTER_DELIVERED: 'letter_delivered',
   WAITING_COMMAND: 'waiting_command'
+};
+
+// Comandos especiais
+const COMMANDS = {
+  IA: 'ia',
+  INSPIRACAO: 'inspiracao',
+  NAO: 'nao',
+  CARTA: 'carta'
 };
 
 /**
@@ -90,7 +98,7 @@ async function processTextMessage(userPhoneNumber, messageText, session) {
     const text = messageText.trim();
     
     // Comandos especiais disponíveis em qualquer estado
-    if (text.toLowerCase() === "quero receber a minha carta!") {
+    if (text.toLowerCase().includes("quero receber") && text.toLowerCase().includes("carta")) {
       // Reinicia a conversa
       session = {
         phoneNumber: userPhoneNumber,
@@ -112,8 +120,8 @@ async function processTextMessage(userPhoneNumber, messageText, session) {
         await processName(userPhoneNumber, text, session);
         break;
         
-      case CONVERSATION_STATES.WAITING_EMAIL:
-        await processEmail(userPhoneNumber, text, session);
+      case CONVERSATION_STATES.WAITING_BUSINESS:
+        await processBusiness(userPhoneNumber, text, session);
         break;
         
       case CONVERSATION_STATES.WAITING_PROFILE:
@@ -205,7 +213,7 @@ async function processImageMessage(userPhoneNumber, imageData, session) {
     // Solicita o desafio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      `Obrigado! Agora me conta, em apenas uma frase ou palavra, qual é o maior desafio que você tem enfrentado no seu ${session.name ? 'Negócio' : 'negócio'} no momento?`
+      "Agora me diga, com sinceridade...\n\n🌐 *Se você pudesse resolver apenas UM desafio neste momento*,\nqual seria esse desafio que, ao ser superado, traria os resultados que você mais deseja?\n\n(Responda com apenas uma frase)"
     );
   } catch (error) {
     log('Erro ao processar mensagem de imagem:', error);
@@ -227,7 +235,7 @@ async function startConversation(userPhoneNumber) {
     // Mensagem de boas-vindas
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Olá! 👋 Bem-vindo(a) ao Conselheiro da Consciênc.IA do evento MAPA DO LUCRO!\n\nSou um assistente virtual especial criado para gerar sua \"Carta de Consciência\" personalizada – uma análise única baseada no seu perfil digital que revelará insights valiosos sobre seu comportamento empreendedor e recomendações práticas de como usar IA no seu negócio.\n\nPara começar, preciso conhecer você melhor.\nPor favor, como gostaria de ser chamado(a)?"
+      "Olá! 👋 Bem-vindo(a) ao *Conselheiro Consciênc.IA* do evento MAPA DO LUCRO!\n\nSou um assistente virtual criado para gerar sua *Carta da Consciênc.IA* personalizada — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.\nComo gostaria de ser chamado(a)? 🙂"
     );
     
     // Atualiza o estado da sessão
@@ -258,13 +266,13 @@ async function processName(userPhoneNumber, name, session) {
     
     // Atualiza a sessão com o nome
     session.name = name;
-    session.state = CONVERSATION_STATES.WAITING_EMAIL;
+    session.state = CONVERSATION_STATES.WAITING_BUSINESS;
     await sessionService.saveSession(userPhoneNumber, session);
     
-    // Solicita o e-mail
+    // Solicita o negócio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      `Obrigado, ${name}! 😊\n\nPara enviarmos materiais após o evento, por favor, informe seu e-mail:\n\n(Caso não queira informar agora, digite "pular" para continuar)`
+      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar qual é o Nicho do seu Negócio ou trabalho atual e o seu papel nele?\n\n*(Caso não queira informar agora, digite "pular" para continuar.)*`
     );
   } catch (error) {
     log('Erro ao processar nome:', error);
@@ -278,28 +286,18 @@ async function processName(userPhoneNumber, name, session) {
 }
 
 /**
- * Processa o e-mail do usuário
+ * Processa o negócio do usuário
  * @param {string} userPhoneNumber - Número de telefone do usuário
- * @param {string} email - E-mail do usuário
+ * @param {string} business - Negócio do usuário
  * @param {Object} session - Dados da sessão do usuário
  */
-async function processEmail(userPhoneNumber, email, session) {
+async function processBusiness(userPhoneNumber, business, session) {
   try {
     // Verifica se o usuário quer pular esta etapa
-    if (email.toLowerCase() === "pular") {
-      session.email = null;
+    if (business.toLowerCase() === "pular") {
+      session.business = null;
     } else {
-      // Valida o e-mail (validação básica)
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        await whatsappService.sendTextMessage(
-          userPhoneNumber,
-          "Por favor, informe um e-mail válido ou digite \"pular\" para continuar."
-        );
-        return;
-      }
-      
-      session.email = email;
+      session.business = business;
     }
     
     // Atualiza a sessão
@@ -309,15 +307,15 @@ async function processEmail(userPhoneNumber, email, session) {
     // Solicita o perfil
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Perfeito! Agora, para gerar sua Carta de Consciência personalizada, preciso analisar seu perfil digital.\n\nPor favor, me envie o link do seu perfil público do Instagram ou LinkedIn.\nExemplo: https://www.instagram.com/seuusuario\n\n(Você também pode enviar apenas seu @usuário, ou até mesmo uma imagem do perfil / print. )"
+      "Perfeito! Agora, para gerar sua Carta de Consciência personalizada, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:\n\n1️⃣ Envie um **print do seu perfil social** (Instagram ou LinkedIn) para uma leitura mais profunda.\n2️⃣ Envie **sua foto de perfil** (uma imagem que te represente hoje).\n3️⃣ Ou apenas me diga seu @ (ex: @renatohilel.oficial) para uma leitura objetiva.\n\n📝 Envie agora da forma que preferir!"
     );
   } catch (error) {
-    log('Erro ao processar e-mail:', error);
+    log('Erro ao processar negócio:', error);
     
     // Envia mensagem de erro para o usuário
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Desculpe, ocorreu um erro ao processar seu e-mail. Por favor, tente novamente."
+      "Desculpe, ocorreu um erro ao processar sua informação. Por favor, tente novamente."
     );
   }
 }
@@ -372,7 +370,7 @@ async function processProfile(userPhoneNumber, profileInput, session) {
     // Solicita o desafio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      `Obrigado! Agora me conta, em apenas uma frase ou palavra, qual é o maior desafio que você tem enfrentado no seu ${session.name ? 'Negócio' : 'negócio'} no momento?`
+      "Agora me diga, com sinceridade...\n\n🌐 *Se você pudesse resolver apenas UM desafio neste momento*,\nqual seria esse desafio que, ao ser superado, traria os resultados que você mais deseja?\n\n(Responda com apenas uma frase)"
     );
   } catch (error) {
     log('Erro ao processar perfil:', error);
@@ -410,12 +408,13 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Informa que está gerando a carta
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Gratidão por compartilhar! 🙏\n\nVou analisar seu perfil e gerar sua Carta de Consciência personalizada. Isso pode levar alguns instantes... ⌛"
+      "⏳ Estou analisando suas informações e preparando sua Carta da Consciênc.IA…\nIsso pode levar alguns instantes...\n\n🌟 Sinta-se confortável. A magia está acontecendo."
     );
     
     // Gera a carta de consciência
     const userData = {
       name: session.name,
+      business: session.business,
       challenge: session.challenge,
       profileUrl: session.profileUrl,
       profileData: session.profileData,
@@ -444,47 +443,30 @@ async function processChallenge(userPhoneNumber, challenge, session) {
         log('Erro na segunda tentativa de gerar carta:', retryError);
         
         // Usa uma carta genérica em caso de falha
-        letterContent = `❤️ *Introdução Simbólica:*\n\nOlá, ${session.name},\n\nImagine por um momento, a Alma do seu Negócio como um farol brilhante na noite, iluminando o caminho para aqueles que navegam nos mares tempestuosos da incerteza. Você é o guardião desse farol, a luz que traz orientação e esperança.\n\n✨ *Perfil Comportamental (Insight de Consciência):*\n\nAnalisando seu perfil digital, é evidente a paixão que arde em você. Seus interesses variados demonstram a abrangência de sua curiosidade e seus padrões de pensamento inovadores. No conceito de Ikigai, temos uma intersecção de quatro elementos fundamentais: O que você ama, o que o mundo precisa, o que você pode ser pago para fazer e o que você é bom.\n\n💎 *Conselho de Ouro:*\n\nSeu desafio, "${session.challenge}", é como um vulcão adormecido. Pode parecer assustador, mas lembre-se, é a pressão que forma os diamantes. Não tenha medo do desafio. Abraçá-lo é o que o levará ao próximo nível. No contexto do Ikigai, procure aquilo que faz seu espírito vibrar, isso que se conecta com o seu ser mais profundo. Encontre seu equilíbrio entre o que você ama, o que é bom, o que o mundo precisa e pelo qual você pode ser pago. Acredite no seu potencial.\n\n🚀 *Sugestão de Ferramenta de IA:*\n\nUma ferramenta prática de Inteligência Artificial que pode ajudar diretamente com seu desafio é o Assistente Virtual Personalizado. Ele pode fornecer uma análise detalhada do mundo ao seu redor, fornecendo insights e permitindo tomar decisões mais informadas e focadas. Além disso, pode ajudá-lo a gerenciar seu tempo e tarefas, permitindo que você se concentre no que é mais importante.\n\n✨ *Pílula de Inspiração (Poesia Personalizada):*\n\nEm mares de incerteza, você navega,\nCom a Alma do Negócio a iluminar,\nDesafios enormes, como montanhas se elevam,\nMas você, ${session.name}, está aqui para conquistar.\n\nNo vulcão do desafio, um diamante nasce,\nEm seu Ikigai, sua verdadeira luz resplandece,\nEm seu espírito, um fogo incansável arde,\nVocê é a estrela que o universo conhece.\n\n🌟 *Conclusão Motivacional:*\n\n${session.name}, mantenha a cabeça erguida e o coração aberto. Continue a brilhar a luz da Alma do seu Negócio, desbravando o desconhecido e enfrentando os desafios. Seu Ikigai está ao alcance. Acredite em você e verá que o impossível é apenas uma opinião.`;
+        letterContent = `*Carta de Consciência para ${session.name}*\n\n1. *Introdução Simbólica:*\n\nCaro ${session.name},\n\nNa vasta imensidão do oceano empreendedor, o seu negócio é como um farol de luz intensa, irradiando potencial e guiando aqueles à sua volta. Assim como um farol que se eleva sobre as águas turbulentas, a alma do seu negócio ilumina o caminho para novas possibilidades e conquistas.\n\n2. *Perfil Comportamental:*\n\nAo navegar pelas ondas do seu perfil, é evidente que você é alguém que busca incessantemente seu ikigai, o ponto de interseção entre o que você ama, no que é bom, o que o mundo precisa e pelo que pode ser pago. Sua habilidade de comunicar-se com clareza e empatia é notável, mostrando que você entende a importância de criar laços genuínos com seu público.\n\nNo entanto, a busca por escalar as vendas, seu desafio atual, requer um equilíbrio entre sua paixão e a necessidade de estruturar processos que garantam crescimento sustentável.\n\n3. *Conselho de Ouro:*\n\n${session.name}, para escalar suas vendas, é fundamental não apenas ampliar sua base de clientes, mas também consolidar a fidelidade daqueles que já confiam em sua marca. Considere aprofundar-se na personalização de experiências, criando ofertas que ressoem pessoalmente com seus seguidores. Utilize feedbacks para refinar suas estratégias e não hesite em testar novos canais de venda que possam complementar suas práticas atuais. Lembre-se, a escalabilidade é tanto sobre alavancar seus pontos fortes quanto sobre otimizar suas operações internas.\n\n4. *Sugestão de Ferramenta de IA:*\n\nPara enfrentar o desafio de escalar as vendas, recomendo que explore a utilização de Inteligência Artificial para análise de dados de clientes. Ferramentas de IA, como chatbots inteligentes e plataformas de CRM com capacidades de machine learning, podem ajudar a segmentar seu público, identificar padrões de compra e prever comportamentos futuros. Isso não apenas aprimorará suas estratégias de marketing, mas também fortalecerá o relacionamento com seus clientes, oferecendo-lhes exatamente o que precisam, quando precisam.\n\n5. *Pílula de Inspiração:*\n\nNo palco da vida, o empreendedor é o ator,\nCom coragem, avança, sem temor,\nEscalar montanhas, cruzar o mar,\nCada desafio, uma chance de brilhar.\n\n${session.name}, com visão e coração em sintonia,\nSeu farol ilumina o caminho, dia após dia,\nQue a jornada seja de crescimento e florescer,\nE que suas conquistas sejam sempre de se enaltecer. ✨\n\n6. *Conclusão Motivacional:*\n\n${session.name}, lembre-se de que a escalada é um processo contínuo de aprendizagem e adaptação. Permita-se ser guiado pela paixão que o impulsiona e pela visão que o orienta. A jornada de escalar vendas é uma dança entre estratégia e inovação, e você possui o talento e a determinação necessários para liderar com sucesso. Continue iluminando o caminho com sua luz única e nunca perca de vista o horizonte de possibilidades que se estende diante de você.\n\nCom determinação e entusiasmo, siga em frente! 🚀\n\nCom os melhores votos de sucesso,\n\nConselheiro da Consciênc.IA`;
       }
     }
     
-    // Calcula o tempo de processamento
-    const processingTime = Date.now() - generationStartTime;
+    // Envia a carta para o usuário
+    await sendConscienceLetter(userPhoneNumber, letterContent);
     
-    // Atualiza a sessão com a carta gerada
+    // Atualiza o estado da sessão
     session.letterContent = letterContent;
-    session.processingTime = processingTime;
-    session.endTimestamp = Date.now();
+    session.letterGeneratedAt = Date.now();
     session.state = CONVERSATION_STATES.LETTER_DELIVERED;
     await sessionService.saveSession(userPhoneNumber, session);
     
-    // Salva a interação para o painel administrativo
-    await interactionService.saveInteraction({
-      phoneNumber: userPhoneNumber,
-      name: session.name,
-      email: session.email,
-      profileUrl: session.profileUrl,
-      challenge: session.challenge,
-      inputType: session.inputType,
-      letterContent: letterContent,
-      startTimestamp: session.startTimestamp,
-      endTimestamp: session.endTimestamp,
-      processingTime: processingTime,
-      status: 'completed'
-    });
-    
-    // Envia a carta para o usuário
-    await sendLetterInChunks(userPhoneNumber, letterContent);
-    
-    // Envia mensagem final com opções
+    // Envia mensagem de confirmação e opções
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✨ Sua Carta de Consciência personalizada foi entregue! ✨\n\nPosso ajudar com mais algo? Digite:\n\n*\"IA\"* para saber como a IA pode ajudar você hoje.\n*\"inspiração\"* para outra inspiração personalizada.\n*\"não\"* para encerrar."
+      "✨ *Sua Carta da Consciênc.IA foi entregue!* ✨\n\nEspero que tenha gostado da sua Carta! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫"
     );
     
-    // Atualiza o estado da sessão
-    session.state = CONVERSATION_STATES.WAITING_COMMAND;
-    await sessionService.saveSession(userPhoneNumber, session);
+    // Envia opções de continuidade
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      "Posso ajudar com mais algo? Digite:\n\n*\"IA\"* para saber como a IA pode ajudar você hoje.\n*\"inspiração\"* para outra inspiração personalizada.\n*\"não\"* para encerrar."
+    );
   } catch (error) {
     log('Erro ao processar desafio:', error);
     
@@ -497,55 +479,101 @@ async function processChallenge(userPhoneNumber, challenge, session) {
 }
 
 /**
+ * Envia a carta de consciência para o usuário
+ * @param {string} userPhoneNumber - Número de telefone do usuário
+ * @param {string} letterContent - Conteúdo da carta
+ */
+async function sendConscienceLetter(userPhoneNumber, letterContent) {
+  try {
+    // Envia a carta para o usuário
+    await whatsappService.sendTextMessage(userPhoneNumber, letterContent);
+  } catch (error) {
+    log('Erro ao enviar carta:', error);
+    
+    // Tenta enviar em partes menores em caso de erro
+    try {
+      const parts = letterContent.split('\n\n');
+      for (const part of parts) {
+        if (part.trim()) {
+          await whatsappService.sendTextMessage(userPhoneNumber, part);
+          // Pequeno atraso para evitar problemas de ordem
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+    } catch (retryError) {
+      log('Erro ao enviar carta em partes:', retryError);
+    }
+  }
+}
+
+/**
  * Processa comandos após a entrega da carta
  * @param {string} userPhoneNumber - Número de telefone do usuário
- * @param {string} command - Comando do usuário
+ * @param {string} text - Texto do comando
  * @param {Object} session - Dados da sessão do usuário
  */
-async function processCommand(userPhoneNumber, command, session) {
+async function processCommand(userPhoneNumber, text, session) {
   try {
-    const lowerCommand = command.toLowerCase();
+    const command = text.toLowerCase().trim();
     
-    if (lowerCommand === "ia") {
-      // Gera sugestões de IA
-      const iaHelp = await contentGenerationService.generateIAHelp(session.name, session.challenge);
+    // Verifica se é uma solicitação de informações sobre o programa
+    if (command.includes('programa') || command.includes('conscienc.ia') || 
+        command.includes('mentor') || command.includes('renato') || 
+        command.includes('nuno') || command.includes('arcanjo')) {
       
-      await whatsappService.sendTextMessage(userPhoneNumber, iaHelp);
-      
-      // Pergunta se deseja mais algo
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "Posso ajudar com mais algo? Digite:\n\n*\"inspiração\"* para uma inspiração personalizada.\n*\"não\"* para encerrar."
-      );
-    } else if (lowerCommand === "inspiração") {
-      // Gera inspiração personalizada
-      const inspiration = await contentGenerationService.generateInspiration(session.name, session.challenge);
-      
-      await whatsappService.sendTextMessage(userPhoneNumber, inspiration);
-      
-      // Pergunta se deseja mais algo
-      await whatsappService.sendTextMessage(
-        userPhoneNumber,
-        "Posso ajudar com mais algo? Digite:\n\n*\"IA\"* para saber como a IA pode ajudar você hoje.\n*\"não\"* para encerrar."
-      );
-    } else if (lowerCommand === "não") {
-      // Encerra a conversa
-      await whatsappService.sendTextMessage(
-        userPhoneNumber,
-        `Obrigado por utilizar o Conselheiro da Consciênc.IA, ${session.name}! Foi um prazer ajudar.\n\nSe quiser receber outra Carta de Consciência no futuro, basta enviar \"Quero receber a minha Carta!\".\n\nAté a próxima! 👋`
+        "🌟 O *Programa Consciênc.IA* foi criado por Renato Hilel e Nuno Arcanjo para ajudar você a escalar seu negócio, sua mentoria ou sua marca pessoal com autenticidade e IA estratégica.\n\nVocê pode se inscrever na lista de espera com benefícios exclusivos pelo site:\n\n🔗 https://www.floreon.app.br/conscienc-ia\n\nSe quiser conversar com um mentor humano agora, aproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa @renatohilel.oficial e @nunoarcanjo.poeta! 💫"
       );
       
-      // Adiciona mensagem sobre o Programa Consciênc.IA
-      await whatsappService.sendTextMessage(
-        userPhoneNumber,
-        "🌟 *Programa Consciênc.IA* 🌟\n\nGostou da sua experiência? O Programa Consciênc.IA oferece uma jornada completa de transformação para empreendedores que desejam integrar IA em seus negócios de forma estratégica e consciente.\n\nPara saber mais, acesse: https://consciencia.ia"
-       );
-    } else {
-      // Comando não reconhecido
-      await whatsappService.sendTextMessage(
-        userPhoneNumber,
-        "Desculpe, não reconheço esse comando. Por favor, digite:\n\n*\"IA\"* para saber como a IA pode ajudar você hoje.\n*\"inspiração\"* para outra inspiração personalizada.\n*\"não\"* para encerrar."
-      );
+      return;
+    }
+    
+    // Processa comandos específicos
+    switch (command) {
+      case COMMANDS.IA:
+      case 'ia':
+        await processIACommand(userPhoneNumber, session);
+        break;
+        
+      case COMMANDS.INSPIRACAO:
+      case 'inspiração':
+      case 'inspiracao':
+        await processInspirationCommand(userPhoneNumber, session);
+        break;
+        
+      case COMMANDS.NAO:
+      case 'não':
+      case 'nao':
+        await processEndCommand(userPhoneNumber, session);
+        break;
+        
+      case COMMANDS.CARTA:
+      case 'carta':
+        // Verifica se já passou tempo suficiente para gerar outra carta
+        const now = Date.now();
+        const lastGeneration = session.letterGeneratedAt || 0;
+        const hoursSinceLastGeneration = (now - lastGeneration) / (1000 * 60 * 60);
+        
+        if (hoursSinceLastGeneration < 24) {
+          await whatsappService.sendTextMessage(
+            userPhoneNumber,
+            "Você já recebeu sua Carta da Consciênc.IA personalizada hoje! Só é possível gerar uma carta a cada 24 horas.\n\nSe quiser mais insights personalizados, conheça o Programa Consciênc.IA:\n\n🔗 https://www.floreon.app.br/conscienc-ia"
+          );
+        } else {
+          // Reinicia o processo para gerar uma nova carta
+          session.state = CONVERSATION_STATES.INITIAL;
+          await sessionService.saveSession(userPhoneNumber, session);
+          await startConversation(userPhoneNumber);
+        }
+        break;
+        
+      default:
+        // Comando não reconhecido
+        await whatsappService.sendTextMessage(
+          userPhoneNumber,
+          "Desculpe, não reconheço esse comando. Por favor, digite:\n\n*\"IA\"* para saber como a IA pode ajudar você hoje.\n*\"inspiração\"* para outra inspiração personalizada.\n*\"não\"* para encerrar."
+        );
     }
   } catch (error) {
     log('Erro ao processar comando:', error);
@@ -559,28 +587,108 @@ async function processCommand(userPhoneNumber, command, session) {
 }
 
 /**
- * Envia a carta em partes para evitar limitações de tamanho do WhatsApp
+ * Processa o comando IA
  * @param {string} userPhoneNumber - Número de telefone do usuário
- * @param {string} letterContent - Conteúdo da carta
+ * @param {Object} session - Dados da sessão do usuário
  */
-async function sendLetterInChunks(userPhoneNumber, letterContent) {
+async function processIACommand(userPhoneNumber, session) {
   try {
-    // Divide a carta em seções baseadas em cabeçalhos
-    const sections = letterContent.split(/(?=\*[^*]+\*)/g);
-    
-    // Envia cada seção separadamente
-    for (const section of sections) {
-      if (section.trim()) {
-        await whatsappService.sendTextMessage(userPhoneNumber, section.trim());
-        
-        // Pequeno delay para evitar problemas de ordem
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+    // Gera dicas de IA personalizadas
+    let aiTips = '';
+    try {
+      aiTips = await openaiService.generateAITips({
+        name: session.name,
+        business: session.business,
+        challenge: session.challenge
+      });
+    } catch (error) {
+      log('Erro ao gerar dicas de IA:', error);
+      
+      // Usa dicas genéricas em caso de falha
+      aiTips = `Olá ${session.name || 'empreendedor(a)'},\n\nAqui estão algumas formas como a IA pode ajudar você hoje:\n\n1. *Automação de Marketing*: Use IA para criar e programar conteúdo para redes sociais, segmentando seu público de forma mais eficiente.\n\n2. *Análise de Dados*: Implemente ferramentas de IA para analisar o comportamento dos clientes e identificar padrões que podem aumentar suas vendas.\n\n3. *Atendimento ao Cliente*: Chatbots inteligentes podem responder perguntas frequentes 24/7, liberando seu tempo para tarefas estratégicas.\n\n4. *Personalização*: Utilize IA para criar experiências personalizadas para seus clientes, aumentando a fidelização.\n\n5. *Otimização de Processos*: Identifique gargalos em seus processos internos com análise preditiva.\n\nPara implementar estas estratégias, recomendo começar com uma ferramenta simples como o ChatGPT para criar conteúdo, e gradualmente explorar soluções mais específicas para seu negócio.\n\nEspero que estas dicas ajudem a impulsionar seu crescimento!`;
     }
-  } catch (error) {
-    log('Erro ao enviar carta em partes:', error);
     
-    // Tenta enviar a carta completa em caso de erro
-    await whatsappService.sendTextMessage(userPhoneNumber, letterContent);
+    // Envia as dicas para o usuário
+    await whatsappService.sendTextMessage(userPhoneNumber, aiTips);
+    
+    // Envia opções novamente
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      "Posso ajudar com mais algo? Digite:\n\n*\"IA\"* para saber como a IA pode ajudar você hoje.\n*\"inspiração\"* para outra inspiração personalizada.\n*\"não\"* para encerrar."
+    );
+  } catch (error) {
+    log('Erro ao processar comando IA:', error);
+    
+    // Envia mensagem de erro para o usuário
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      "Desculpe, ocorreu um erro ao gerar dicas de IA. Por favor, tente novamente mais tarde."
+    );
+  }
+}
+
+/**
+ * Processa o comando inspiração
+ * @param {string} userPhoneNumber - Número de telefone do usuário
+ * @param {Object} session - Dados da sessão do usuário
+ */
+async function processInspirationCommand(userPhoneNumber, session) {
+  try {
+    // Gera inspiração personalizada
+    let inspiration = '';
+    try {
+      inspiration = await openaiService.generateInspiration({
+        name: session.name,
+        business: session.business,
+        challenge: session.challenge
+      });
+    } catch (error) {
+      log('Erro ao gerar inspiração:', error);
+      
+      // Usa inspiração genérica em caso de falha
+      inspiration = `✨ *Inspiração para ${session.name || 'você'}* ✨\n\nNo oceano dos negócios, as ondas não param,\nMas é na persistência que os vencedores se destacam.\nCada desafio superado é um passo à frente,\nCada aprendizado, uma joia reluzente.\n\nSua jornada é única, seu caminho é seu,\nNão compare sua página 10 com o capítulo 20 de alguém.\nO sucesso não é destino, mas jornada constante,\nE você já provou ser resiliente e brilhante.\n\nHoje, permita-se sonhar mais alto,\nDê um passo além, faça um novo salto.\nSua determinação é sua maior aliada,\nE seu potencial, uma força ainda não totalmente explorada.\n\nLembre-se: grandes árvores crescem em silêncio,\nE os maiores sucessos muitas vezes vêm após momentos de silêncio.\nConfie em seu processo, honre sua caminhada,\nPois sua história de sucesso já está sendo forjada. 🌟`;
+    }
+    
+    // Envia a inspiração para o usuário
+    await whatsappService.sendTextMessage(userPhoneNumber, inspiration);
+    
+    // Envia opções novamente
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      "Posso ajudar com mais algo? Digite:\n\n*\"IA\"* para saber como a IA pode ajudar você hoje.\n*\"inspiração\"* para outra inspiração personalizada.\n*\"não\"* para encerrar."
+    );
+  } catch (error) {
+    log('Erro ao processar comando inspiração:', error);
+    
+    // Envia mensagem de erro para o usuário
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      "Desculpe, ocorreu um erro ao gerar inspiração. Por favor, tente novamente mais tarde."
+    );
+  }
+}
+
+/**
+ * Processa o comando de encerramento
+ * @param {string} userPhoneNumber - Número de telefone do usuário
+ * @param {Object} session - Dados da sessão do usuário
+ */
+async function processEndCommand(userPhoneNumber, session) {
+  try {
+    // Envia mensagem de despedida
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      `Obrigado por usar o Conselheiro da Consciênc.IA, ${session.name || 'amigo(a)'}! 🙏\n\nFoi um prazer ajudar você hoje. Lembre-se de que você pode voltar a qualquer momento enviando "Quero receber minha Carta!"\n\nAproveite o evento MAPA DO LUCRO e não deixe de conhecer o Programa Consciênc.IA:\n\n🔗 https://www.floreon.app.br/conscienc-ia\n\nDesejo muito sucesso em sua jornada! ✨`
+    );
+    
+    // Não altera o estado da sessão para permitir que o usuário continue a conversa se desejar
+  } catch (error) {
+    log('Erro ao processar comando de encerramento:', error);
+    
+    // Envia mensagem de erro para o usuário
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      "Desculpe, ocorreu um erro ao encerrar nossa conversa. Você pode simplesmente parar de responder ou enviar \"Quero receber minha Carta!\" para reiniciar quando desejar."
+    );
   }
 }
