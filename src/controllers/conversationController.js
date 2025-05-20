@@ -3,7 +3,7 @@ import whatsappService from '../services/whatsappService.js';
 import openaiService from '../services/openaiService.js';
 import profileScraperService from '../services/profileScraperService.js';
 import visionAnalysisService from '../services/visionAnalysisService.js';
-import contentGenerationService from '../services/contentGenerationService.js';
+import * as contentGenerationService from '../services/contentGenerationService.js';
 import { log } from '../utils/logger.js';
 
 // Função principal para processar mensagens recebidas
@@ -435,7 +435,7 @@ async function sendHelpMessage(phoneNumber) {
   try {
     await whatsappService.sendTextMessage(
       phoneNumber,
-      "Posso ajudar com mais algo? Digite:\n\n*\"IA\"* para saber como a IA pode ajudar você hoje.\n*\"inspiração\"* para outra inspiração personalizada.\n*\"não\"* para encerrar."
+      "Se precisar de mais alguma coisa, estou à disposição! 😊\n\nVocê pode:\n\n- Digitar *IA* para receber dicas de como a IA pode ajudar no seu desafio\n- Digitar *Inspiração* para receber uma pílula de inspiração personalizada\n- Perguntar sobre o *Programa Consciênc.IA* ou sobre os mentores *Renato Hilel* e *Nuno Arcanjo*"
     );
   } catch (error) {
     log('Erro ao enviar mensagem de ajuda:', error);
@@ -443,70 +443,101 @@ async function sendHelpMessage(phoneNumber) {
   }
 }
 
-// Processa o comando "IA"
+// Processa o comando IA
 async function handleIACommand(phoneNumber, session) {
   try {
-    const userName = session.userName || 'Empreendedor';
+    if (!session.challenge) {
+      await whatsappService.sendTextMessage(
+        phoneNumber,
+        "Para que eu possa te ajudar com sugestões de IA, preciso saber qual é o seu desafio atual. Por favor, compartilhe comigo qual é o seu maior desafio no momento."
+      );
+      
+      session.state = 'WAITING_CHALLENGE';
+      await sessionService.saveSession(phoneNumber, session);
+      return;
+    }
     
     await whatsappService.sendTextMessage(
       phoneNumber,
-      `Olá ${userName},\n\nAqui estão algumas formas como a IA pode ajudar você hoje:\n\n1. *Automação de Marketing*: Use IA para criar e programar conteúdo para redes sociais, segmentando seu público de forma mais eficiente.\n\n2. *Análise de Dados*: Implemente ferramentas de IA para analisar o comportamento dos clientes e identificar padrões que podem aumentar suas vendas.\n\n3. *Atendimento ao Cliente*: Chatbots inteligentes podem responder perguntas frequentes 24/7, liberando seu tempo para tarefas estratégicas.\n\n4. *Personalização*: Utilize IA para criar experiências personalizadas para seus clientes, aumentando a fidelização.\n\n5. *Otimização de Processos*: Identifique gargalos em seus processos internos com análise preditiva.\n\nPara implementar estas estratégias, recomendo começar com uma ferramenta simples e expandir conforme sua confiança aumenta.`
+      "Estou gerando sugestões de como a IA pode te ajudar com seu desafio... Um momento."
     );
+    
+    const iaHelp = await contentGenerationService.generateIAHelp(session.userName, session.challenge);
+    
+    await whatsappService.sendTextMessage(phoneNumber, iaHelp);
     
     // Envia mensagem de ajuda
     await sendHelpMessage(phoneNumber);
   } catch (error) {
     log('Erro ao processar comando IA:', error);
-    throw error;
+    
+    await whatsappService.sendTextMessage(
+      phoneNumber,
+      "Desculpe, ocorreu um erro ao gerar sugestões de IA. Por favor, tente novamente mais tarde."
+    );
   }
 }
 
-// Processa o comando "inspiração"
+// Processa o comando Inspiração
 async function handleInspirationCommand(phoneNumber, session) {
   try {
-    const userName = session.userName || 'Empreendedor';
-    const businessInfo = session.businessInfo || 'seu negócio';
+    if (!session.challenge) {
+      await whatsappService.sendTextMessage(
+        phoneNumber,
+        "Para que eu possa te enviar uma inspiração personalizada, preciso saber qual é o seu desafio atual. Por favor, compartilhe comigo qual é o seu maior desafio no momento."
+      );
+      
+      session.state = 'WAITING_CHALLENGE';
+      await sessionService.saveSession(phoneNumber, session);
+      return;
+    }
     
-    // Gera uma inspiração personalizada
-    const inspiration = await openaiService.generateInspiration(userName, businessInfo);
+    await whatsappService.sendTextMessage(
+      phoneNumber,
+      "Estou canalizando uma inspiração especial para você... Um momento."
+    );
+    
+    const inspiration = await contentGenerationService.generateInspiration(session.userName, session.challenge);
     
     await whatsappService.sendTextMessage(phoneNumber, inspiration);
     
     // Envia mensagem de ajuda
     await sendHelpMessage(phoneNumber);
   } catch (error) {
-    log('Erro ao processar comando inspiração:', error);
-    throw error;
-  }
-}
-
-// Processa o comando "não"
-async function handleNoCommand(phoneNumber, session) {
-  try {
-    const userName = session.userName || 'Empreendedor';
+    log('Erro ao processar comando Inspiração:', error);
     
     await whatsappService.sendTextMessage(
       phoneNumber,
-      `Foi um prazer te ajudar, ${userName}! 🌟\n\nSe precisar de mais alguma coisa, é só me chamar.\n\nDesejo muito sucesso em sua jornada! ✨`
+      "Desculpe, ocorreu um erro ao gerar sua inspiração. Por favor, tente novamente mais tarde."
     );
+  }
+}
+
+// Processa o comando Não
+async function handleNoCommand(phoneNumber, session) {
+  try {
+    await whatsappService.sendTextMessage(
+      phoneNumber,
+      "Tudo bem! Estou aqui para ajudar quando precisar.\n\nSe quiser receber sua Carta da Consciênc.IA personalizada, é só me avisar digitando *\"Quero receber a minha Carta!\"*"
+    );
+    
+    session.state = 'INITIAL';
+    await sessionService.saveSession(phoneNumber, session);
   } catch (error) {
-    log('Erro ao processar comando não:', error);
+    log('Erro ao processar comando Não:', error);
     throw error;
   }
 }
 
-// Processa perguntas sobre o Programa Consciênc.IA
+// Envia informações sobre o programa
 async function handleProgramInfo(phoneNumber) {
   try {
     await whatsappService.sendTextMessage(
       phoneNumber,
       "🌟 O *Programa Consciênc.IA* foi criado por Renato Hilel e Nuno Arcanjo para ajudar você a escalar seu negócio, sua mentoria ou sua marca pessoal com autenticidade e IA estratégica.\n\nVocê pode se inscrever na lista de espera com benefícios exclusivos pelo site:\n🔗 https://www.floreon.app.br/conscienc-ia\n\nSe quiser conversar com um mentor humano agora, aproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa @renatohilel.oficial e @nunoarcanjo.poeta! 💫"
     );
-    
-    // Envia mensagem de ajuda
-    await sendHelpMessage(phoneNumber);
   } catch (error) {
-    log('Erro ao enviar informações do programa:', error);
+    log('Erro ao enviar informações sobre o programa:', error);
     throw error;
   }
 }
