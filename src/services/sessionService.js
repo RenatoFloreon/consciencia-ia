@@ -3,34 +3,73 @@ import { log } from '../utils/logger.js';
 
 // Configuração do cliente Redis
 // Prioriza Upstash Redis para melhor compatibilidade com Vercel Serverless
-const redisUrl = process.env.REDIS_URL;
-let redisClient;
+const redisUrl = process.env.STORAGE_URL || process.env.REDIS_URL;
+let redisClient = null;
+let redisConnected = false;
 
-if (redisUrl) {
+// Fallback para armazenamento em memória (para desenvolvimento ou se Redis estiver indisponível)
+const localSessions = new Map();
+
+// Inicializa o cliente Redis com tratamento de erros aprimorado
+function initRedisClient() {
+  if (!redisUrl) {
+    log('Redis URL não configurada, usando armazenamento local');
+    return null;
+  }
+
   try {
-    redisClient = new Redis(redisUrl, {
-      maxRetriesPerRequest: 3,
+    const client = new Redis(redisUrl, {
+      maxRetriesPerRequest: 1, // Reduzido para falhar mais rápido
+      connectTimeout: 5000, // Timeout de conexão reduzido
       retryStrategy: (times) => {
-        // Estratégia de retry com backoff exponencial
-        const delay = Math.min(times * 100, 3000);
+        if (times > 2) {
+          // Após 3 tentativas, desiste de tentar reconectar
+          log('Redis - Máximo de tentativas de reconexão atingido, usando armazenamento local');
+          redisConnected = false;
+          return null;
+        }
+        const delay = Math.min(times * 100, 1000);
         return delay;
       }
     });
     
-    redisClient.on('error', err => {
+    client.on('error', err => {
       log('Redis connection error:', err);
+      redisConnected = false;
     });
     
-    redisClient.on('connect', () => {
+    client.on('connect', () => {
       log('Redis connected successfully');
+      redisConnected = true;
     });
+
+    client.on('reconnecting', () => {
+      log('Redis tentando reconectar...');
+    });
+
+    // Teste de conexão inicial
+    client.ping().then(() => {
+      redisConnected = true;
+      log('Redis ping successful');
+    }).catch(err => {
+      redisConnected = false;
+      log('Redis ping failed, using local storage:', err);
+    });
+    
+    return client;
   } catch (err) {
     log('Redis initialization error:', err);
+    return null;
   }
 }
 
-// Fallback para armazenamento em memória (para desenvolvimento ou se Redis estiver indisponível)
-const localSessions = new Map();
+// Inicializa o cliente Redis
+try {
+  redisClient = initRedisClient();
+} catch (err) {
+  log('Erro ao inicializar Redis, usando armazenamento local:', err);
+  redisClient = null;
+}
 
 /**
  * Recupera os dados da sessão para um determinado usuário (número de telefone).
@@ -40,7 +79,8 @@ const localSessions = new Map();
 async function getSession(userId) {
   if (!userId) return null;
   
-  if (redisClient) {
+  // Verifica se o Redis está conectado
+  if (redisClient && redisConnected) {
     try {
       const data = await redisClient.get(`session:${userId}`);
       return data ? JSON.parse(data) : null;
@@ -50,6 +90,7 @@ async function getSession(userId) {
       return localSessions.get(userId) || null;
     }
   } else {
+    // Usa armazenamento local se Redis não estiver disponível
     return localSessions.get(userId) || null;
   }
 }
@@ -66,7 +107,11 @@ async function saveSession(userId, sessionData) {
   // Adiciona timestamp de última atualização
   sessionData.lastUpdated = Date.now();
   
-  if (redisClient) {
+  // Sempre salva localmente como backup
+  localSessions.set(userId, sessionData);
+  
+  // Verifica se o Redis está conectado
+  if (redisClient && redisConnected) {
     try {
       // Define sessão com expiração (6 horas) para evitar dados obsoletos
       await redisClient.set(
@@ -78,12 +123,11 @@ async function saveSession(userId, sessionData) {
       return true;
     } catch (err) {
       log('Redis SET error:', err);
-      // Fallback para armazenamento local em caso de erro
-      localSessions.set(userId, sessionData);
+      // Já salvou localmente, então retorna true
       return true;
     }
   } else {
-    localSessions.set(userId, sessionData);
+    // Já salvou localmente, então retorna true
     return true;
   }
 }
@@ -96,18 +140,21 @@ async function saveSession(userId, sessionData) {
 async function deleteSession(userId) {
   if (!userId) return false;
   
-  if (redisClient) {
+  // Sempre remove do armazenamento local
+  localSessions.delete(userId);
+  
+  // Verifica se o Redis está conectado
+  if (redisClient && redisConnected) {
     try {
       await redisClient.del(`session:${userId}`);
       return true;
     } catch (err) {
       log('Redis DEL error:', err);
-      // Fallback para armazenamento local em caso de erro
-      localSessions.delete(userId);
+      // Já removeu localmente, então retorna true
       return true;
     }
   } else {
-    localSessions.delete(userId);
+    // Já removeu localmente, então retorna true
     return true;
   }
 }
@@ -120,41 +167,89 @@ async function deleteSession(userId) {
 async function listSessions() {
   const sessions = [];
   
-  if (redisClient) {
+  // Primeiro, obtém as sessões locais
+  for (const [id, sess] of localSessions.entries()) {
+    sessions.push({ 
+      id, 
+      session: sess,
+      lastUpdated: sess.lastUpdated || 0,
+      source: 'local'
+    });
+  }
+  
+  // Verifica se o Redis está conectado
+  if (redisClient && redisConnected) {
     try {
       const keys = await redisClient.keys('session:*');
       for (const key of keys) {
         const data = await redisClient.get(key);
         if (data) {
-          const sessionData = JSON.parse(data);
-          sessions.push({
-            id: key.replace(/^session:/, ''),
-            session: sessionData,
-            lastUpdated: sessionData.lastUpdated || 0
-          });
+          try {
+            const sessionData = JSON.parse(data);
+            const userId = key.replace(/^session:/, '');
+            
+            // Verifica se já existe na lista local
+            const existingIndex = sessions.findIndex(s => s.id === userId);
+            
+            if (existingIndex >= 0) {
+              // Atualiza a sessão existente se a do Redis for mais recente
+              if (sessionData.lastUpdated > sessions[existingIndex].lastUpdated) {
+                sessions[existingIndex] = {
+                  id: userId,
+                  session: sessionData,
+                  lastUpdated: sessionData.lastUpdated || 0,
+                  source: 'redis'
+                };
+              }
+            } else {
+              // Adiciona nova sessão
+              sessions.push({
+                id: userId,
+                session: sessionData,
+                lastUpdated: sessionData.lastUpdated || 0,
+                source: 'redis'
+              });
+            }
+          } catch (parseErr) {
+            log('Erro ao analisar dados da sessão:', parseErr);
+          }
         }
       }
-      
-      // Ordena por timestamp de atualização (mais recente primeiro)
-      sessions.sort((a, b) => b.lastUpdated - a.lastUpdated);
     } catch (err) {
       log('Redis listSessions error:', err);
-      // Retorna o que temos até agora (ou vazio) mesmo se ocorrer um erro
+      // Continua com as sessões locais
     }
-  } else {
-    for (const [id, sess] of localSessions.entries()) {
-      sessions.push({ 
-        id, 
-        session: sess,
-        lastUpdated: sess.lastUpdated || 0
-      });
-    }
-    
-    // Ordena por timestamp de atualização (mais recente primeiro)
-    sessions.sort((a, b) => b.lastUpdated - a.lastUpdated);
   }
+  
+  // Ordena por timestamp de atualização (mais recente primeiro)
+  sessions.sort((a, b) => b.lastUpdated - a.lastUpdated);
   
   return sessions;
 }
 
-export default { getSession, saveSession, deleteSession, listSessions };
+// Função para verificar a conexão com o Redis
+async function checkRedisConnection() {
+  if (!redisClient) {
+    return false;
+  }
+  
+  try {
+    await redisClient.ping();
+    redisConnected = true;
+    return true;
+  } catch (err) {
+    redisConnected = false;
+    log('Redis check connection failed:', err);
+    return false;
+  }
+}
+
+// Exporta as funções
+export default { 
+  getSession, 
+  saveSession, 
+  deleteSession, 
+  listSessions,
+  checkRedisConnection,
+  isRedisConnected: () => redisConnected
+};
