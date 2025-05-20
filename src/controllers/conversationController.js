@@ -1,6 +1,6 @@
 import sessionService from '../services/sessionService.js';
 import scrapingService from '../services/scrapingService.js';
-import openaiService from '../services/openaiService.js';
+import * as openaiService from '../services/openaiService.js';
 import whatsappService from '../services/whatsappService.js';
 import * as visionAnalysisService from '../services/visionAnalysisService.js';
 import interactionService from '../services/interactionService.js';
