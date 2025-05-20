@@ -1,5 +1,4 @@
 import express from 'express';
-import bodyParser from 'body-parser';
 import webhookRoutes from './src/routes/webhookRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
 import { log } from './src/utils/logger.js';
