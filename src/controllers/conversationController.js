@@ -1,4 +1,4 @@
-import sessionService from '../services/sessionService.js';
+import * as sessionService from '../services/sessionService.js';
 import whatsappService from '../services/whatsappService.js';
 import * as openaiService from '../services/openaiService.js';
 import * as visionAnalysisService from '../services/visionAnalysisService.js';
@@ -579,7 +579,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     await new Promise(resolve => setTimeout(resolve, 2000));
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✨ *Sua Carta da Consciênc.IA foi entregue!* ✨\n\nEspero que ela tenha trazido insights valiosos para você.\n\n*O que você gostaria de fazer agora?*\n\n1️⃣ Digite *IA* para saber mais sobre como a Inteligência Artificial pode transformar seu negócio\n\n2️⃣ Digite *Inspiração* para receber uma dose extra de motivação\n\n3️⃣ Digite *Carta* para receber sua carta novamente\n\n4️⃣ Digite *Não* para encerrar nossa conversa"
+      "✨ *Sua Carta da Consciênc.IA foi entregue!* ✨\n\nEspero que tenha gostado da sua Carta! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫\n\n*O que você gostaria de fazer agora?*\n\n1️⃣ Digite *IA* para saber mais sobre como a Inteligência Artificial pode transformar seu negócio\n\n2️⃣ Digite *Inspiração* para receber uma dose extra de motivação\n\n3️⃣ Digite *Carta* para receber sua carta novamente\n\n4️⃣ Digite *Não* para encerrar nossa conversa"
     );
   } catch (error) {
     log('Erro ao processar desafio:', error);
