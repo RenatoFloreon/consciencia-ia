@@ -1,15 +1,13 @@
 import express from 'express';
-import cors from 'cors';
 import bodyParser from 'body-parser';
-import webhookRoutes from '../routes/webhookRoutes.js';
-import adminRoutes from '../routes/adminRoutes.js';
-import { log } from '../utils/logger.js';
+import webhookRoutes from './src/routes/webhookRoutes.js';
+import adminRoutes from './src/routes/adminRoutes.js';
+import { log } from './src/utils/logger.js';
 
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
 // Log de todas as requisições
 app.use((req, res, next) => {
