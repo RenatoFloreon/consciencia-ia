@@ -2,7 +2,7 @@ import axios from 'axios';
 import { log } from '../utils/logger.js';
 
 // Configurações
-const WHATSAPP_API_VERSION = 'v18.0'; // Atualizado para a versão mais recente
+const WHATSAPP_API_VERSION = 'v22.0'; // Atualizado para a versão v22.0 que funcionou no curl
 const MAX_RETRIES = 3;
 const INITIAL_TIMEOUT = 30000; // 30 segundos
 const RETRY_DELAY = 2000; // 2 segundos
@@ -82,15 +82,17 @@ export async function sendTextMessage(to, text) {
     return false;
   }
   
+  // Payload exatamente igual ao formato do curl que funcionou
   const payload = {
     messaging_product: 'whatsapp',
-    recipient_type: 'individual',
     to: to,
     type: 'text',
-    text: {
-      body: text
+    text: { 
+      body: text 
     }
   };
+  
+  log(`Payload: ${JSON.stringify(payload)}`);
   
   // Implementa retry com backoff exponencial
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -100,14 +102,19 @@ export async function sendTextMessage(to, text) {
       // Aumenta o timeout a cada tentativa
       const timeout = INITIAL_TIMEOUT * attempt;
       
+      // Usando o formato exato da URL que funcionou no curl
+      const url = `${WHATSAPP_PHONE_ID}/messages`;
+      log(`URL: https://graph.facebook.com/${WHATSAPP_API_VERSION}/${url}`);
+      
       const response = await whatsappClient({
         method: 'post',
-        url: `${WHATSAPP_PHONE_ID}/messages`,
+        url: url,
         data: payload,
         timeout: timeout
       });
       
       log(`Mensagem enviada com sucesso para ${to}. Status: ${response.status}`);
+      log(`Resposta: ${JSON.stringify(response.data)}`);
       return true;
     } catch (error) {
       const errorMessage = error.response?.data?.error?.message || error.message || 'Erro desconhecido';
