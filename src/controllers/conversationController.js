@@ -644,8 +644,7 @@ async function processCommand(userPhoneNumber, command, session) {
       // Encerra a conversa
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "✨ *Sua Carta da Consciênc.IA foi entregue!* ✨Espero que tenha gostado da sua Carta! 🌟 Para saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo. Visite: https://www.floreon.app.br/conscienc-ia. Aproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫”
- ✨"
+        "🙏 Obrigado por usar o Conselheiro Consciênc.IA!\n\nFoi um prazer ajudar você nessa jornada de autoconhecimento e crescimento.\n\nSe quiser receber uma nova carta no futuro, basta enviar \"Quero receber a minha Carta!\".\n\nDesejo muito sucesso em sua jornada! ✨"
       );
       
       // Atualiza o estado da sessão
