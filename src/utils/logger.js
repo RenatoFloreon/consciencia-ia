@@ -11,3 +11,6 @@ export function logError(message, error = null) {
     console.error(error);
   }
 }
+
+// Alias genérico para manter compatibilidade com "log"
+export const log = logInfo;
