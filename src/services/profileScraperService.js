@@ -25,7 +25,7 @@ function normalizeProfileInput(input) {
   }
   
   // Verifica se é uma URL do Instagram
-  if (input.includes('instagram.com')) {
+  if (input.includes('instagram.com' )) {
     // Garante que a URL termina com /
     const url = input.endsWith('/') ? input : `${input}/`;
     return {
