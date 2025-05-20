@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { log } from '../utils/logger.js';
 
-// Configuração da API do WhatsApp
+// No início do arquivo whatsappService.js
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
 const WHATSAPP_API_VERSION = 'v18.0'; // Versão mais recente da API
