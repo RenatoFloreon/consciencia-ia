@@ -1,71 +1,228 @@
 import axios from 'axios';
 import { log } from '../utils/logger.js';
 
-const WA_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
-const WA_TOKEN = process.env.WHATSAPP_TOKEN;
+// Configuração da API do WhatsApp
+const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
+const WHATSAPP_API_VERSION = 'v18.0'; // Versão mais recente da API
+const WHATSAPP_API_URL = `https://graph.facebook.com/${WHATSAPP_API_VERSION}`;
 
 /**
- * Sends a text message to a WhatsApp user via the WhatsApp Cloud API.
- * @param {string} to - The WhatsApp ID (phone number) of the recipient.
- * @param {string} text - The text content of the message to send.
+ * Envia uma mensagem de texto via WhatsApp
+ * @param {string} to - Número de telefone do destinatário
+ * @param {string} text - Texto da mensagem
+ * @returns {Promise<Object>} - Resposta da API
  */
-async function sendText(to, text) {
-  const url = `https://graph.facebook.com/v17.0/${WA_PHONE_ID}/messages`;
-  const payload = {
-    messaging_product: 'whatsapp',
-    recipient_type: 'individual',
-    to: to,
-    type: 'text',
-    text: { body: text }
-  };
+async function sendTextMessage(to, text) {
   try {
-    await axios.post(url, payload, {
-      headers: {
-        'Authorization': `Bearer ${WA_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-  } catch (err) {
-    log('WhatsApp API sendText error:', err.response?.data || err.message);
-  }
-}
-
-/**
- * Splits a long message into smaller chunks (WhatsApp limit ~1600 chars per message).
- * @param {string} message - The message text to split.
- * @param {number} maxLength - Maximum length per chunk.
- * @returns {string[]} Array of message parts.
- */
-function splitMessage(message, maxLength) {
-  const parts = [];
-  let str = message;
-  while (str.length > maxLength) {
-    parts.push(str.slice(0, maxLength));
-    str = str.slice(maxLength);
-  }
-  parts.push(str);
-  return parts;
-}
-
-/**
- * Fetches the direct URL of a media file (image) from WhatsApp API using the media ID.
- * @param {string} mediaId - The ID of the media to fetch.
- * @returns {Promise<{ url: string, mimeType: string }|null>} Object with URL and MIME type, or null on failure.
- */
-async function fetchMediaUrl(mediaId) {
-  try {
-    const mediaRes = await axios.get(`https://graph.facebook.com/v17.0/${mediaId}`, {
-      params: { access_token: WA_TOKEN }
-    });
-    const mediaData = mediaRes.data;
-    if (mediaData.url) {
-      return { url: mediaData.url, mimeType: mediaData.mime_type || null };
+    if (!to || !text) {
+      throw new Error('Número de telefone e texto são obrigatórios');
     }
-    return null;
-  } catch (err) {
-    log('WhatsApp API fetchMediaUrl error:', err.response?.data || err.message);
+
+    const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_ID}/messages`;
+    
+    const data = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'text',
+      text: {
+        preview_url: true,
+        body: text
+      }
+    };
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${WHATSAPP_TOKEN}`
+    };
+    
+    const response = await axios.post(url, data, { headers });
+    return response.data;
+  } catch (error) {
+    log('Erro ao enviar mensagem de texto:', error);
+    
+    // Tenta novamente com backoff exponencial se for um erro de rate limit
+    if (error.response && (error.response.status === 429 || error.response.status === 500)) {
+      const delay = Math.floor(Math.random() * 3000) + 2000; // 2-5 segundos
+      log(`Tentando novamente em ${delay}ms...`);
+      
+      return new Promise((resolve) => {
+        setTimeout(async () => {
+          try {
+            const retryResponse = await sendTextMessage(to, text);
+            resolve(retryResponse);
+          } catch (retryError) {
+            log('Erro na segunda tentativa:', retryError);
+            resolve(null);
+          }
+        }, delay);
+      });
+    }
+    
     return null;
   }
 }
 
-export default { sendText, splitMessage, fetchMediaUrl };
+/**
+ * Envia uma mensagem com template via WhatsApp
+ * @param {string} to - Número de telefone do destinatário
+ * @param {string} templateName - Nome do template
+ * @param {string} language - Código do idioma (ex: pt_BR)
+ * @param {Array} components - Componentes do template
+ * @returns {Promise<Object>} - Resposta da API
+ */
+async function sendTemplateMessage(to, templateName, language = 'pt_BR', components = []) {
+  try {
+    if (!to || !templateName) {
+      throw new Error('Número de telefone e nome do template são obrigatórios');
+    }
+
+    const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_ID}/messages`;
+    
+    const data = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: {
+          code: language
+        },
+        components
+      }
+    };
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${WHATSAPP_TOKEN}`
+    };
+    
+    const response = await axios.post(url, data, { headers });
+    return response.data;
+  } catch (error) {
+    log('Erro ao enviar mensagem de template:', error);
+    return null;
+  }
+}
+
+/**
+ * Obtém a URL de uma mídia enviada pelo usuário
+ * @param {string} mediaId - ID da mídia
+ * @returns {Promise<string>} - URL da mídia
+ */
+async function getMediaUrl(mediaId) {
+  try {
+    if (!mediaId) {
+      throw new Error('ID da mídia é obrigatório');
+    }
+
+    const url = `${WHATSAPP_API_URL}/${mediaId}`;
+    
+    const headers = {
+      'Authorization': `Bearer ${WHATSAPP_TOKEN}`
+    };
+    
+    const response = await axios.get(url, { headers });
+    
+    if (response.data && response.data.url) {
+      // Obtém a mídia da URL retornada
+      const mediaUrl = response.data.url;
+      const mediaResponse = await axios.get(mediaUrl, {
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_TOKEN}`
+        },
+        responseType: 'arraybuffer'
+      });
+      
+      // Converte para base64 para uso com a API da OpenAI
+      const base64 = Buffer.from(mediaResponse.data).toString('base64');
+      return `data:${response.data.mime_type};base64,${base64}`;
+    }
+    
+    return null;
+  } catch (error) {
+    log('Erro ao obter URL da mídia:', error);
+    return null;
+  }
+}
+
+/**
+ * Envia uma imagem via WhatsApp
+ * @param {string} to - Número de telefone do destinatário
+ * @param {string} imageUrl - URL da imagem
+ * @param {string} caption - Legenda da imagem (opcional)
+ * @returns {Promise<Object>} - Resposta da API
+ */
+async function sendImageMessage(to, imageUrl, caption = '') {
+  try {
+    if (!to || !imageUrl) {
+      throw new Error('Número de telefone e URL da imagem são obrigatórios');
+    }
+
+    const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_ID}/messages`;
+    
+    const data = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to,
+      type: 'image',
+      image: {
+        link: imageUrl,
+        caption
+      }
+    };
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${WHATSAPP_TOKEN}`
+    };
+    
+    const response = await axios.post(url, data, { headers });
+    return response.data;
+  } catch (error) {
+    log('Erro ao enviar mensagem de imagem:', error);
+    return null;
+  }
+}
+
+/**
+ * Marca uma mensagem como lida
+ * @param {string} messageId - ID da mensagem
+ * @returns {Promise<Object>} - Resposta da API
+ */
+async function markMessageAsRead(messageId) {
+  try {
+    if (!messageId) {
+      throw new Error('ID da mensagem é obrigatório');
+    }
+
+    const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_ID}/messages`;
+    
+    const data = {
+      messaging_product: 'whatsapp',
+      status: 'read',
+      message_id: messageId
+    };
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${WHATSAPP_TOKEN}`
+    };
+    
+    const response = await axios.post(url, data, { headers });
+    return response.data;
+  } catch (error) {
+    log('Erro ao marcar mensagem como lida:', error);
+    return null;
+  }
+}
+
+export default {
+  sendTextMessage,
+  sendTemplateMessage,
+  getMediaUrl,
+  sendImageMessage,
+  markMessageAsRead
+};
