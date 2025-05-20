@@ -1,80 +1,114 @@
 import axios from 'axios';
-import { load } from 'cheerio';
 import { log } from '../utils/logger.js';
 
 /**
- * Scrapes a public Instagram or LinkedIn profile URL to extract profile data.
- * @param {string} url - The URL of the Instagram or LinkedIn profile.
- * @returns {Promise<{name: string, bio: string, imageUrl: string, posts: string[]}>}
+ * Serviço para extrair informações de perfis de redes sociais
  */
-async function scrapeProfile(url) {
-  const profileData = { name: '', bio: '', imageUrl: '', posts: [] };
 
+/**
+ * Extrai informações de um perfil do Instagram ou LinkedIn
+ * @param {string} profileUrl - URL ou username do perfil
+ * @returns {Promise<Object>} - Dados extraídos do perfil
+ */
+export async function scrapeProfile(profileUrl) {
   try {
-    // Fetch the profile page HTML
-    const res = await axios.get(url, {
-      headers: {
-        // Set a User-Agent to mimic a normal browser request
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/100'
-      }
-    });
-    const html = res.data;
-
-    if (url.includes('instagram.com')) {
-      // Attempt to parse Instagram profile JSON from window._sharedData script
-      const sharedDataMatch = html.match(/window\._sharedData\s*=\s*({.*?});<\/script>/);
-      if (sharedDataMatch) {
-        const jsonString = sharedDataMatch[1];
-        const data = JSON.parse(jsonString);
-        const user = data.entry_data?.ProfilePage?.[0]?.graphql?.user;
-        if (user) {
-          profileData.name = user.full_name || '';
-          profileData.bio = user.biography || '';
-          profileData.imageUrl = user.profile_pic_url_hd || user.profile_pic_url || '';
-          // Extract captions of the last few posts (if available)
-          const postsEdges = user.edge_owner_to_timeline_media?.edges || [];
-          for (const edge of postsEdges.slice(0, 3)) {
-            const captionNode = edge.node.edge_media_to_caption?.edges?.[0]?.node;
-            if (captionNode && captionNode.text) {
-              const text = captionNode.text;
-              // Take first ~100 characters of caption as a sample
-              const snippet = text.length > 100 ? text.substring(0, 100) + '...' : text;
-              profileData.posts.push(snippet);
-            }
-          }
-        }
-      } else {
-        // Fallback: use cheerio to extract basic info if JSON not found (this may be limited)
-        const $ = load(html);
-        profileData.name = $('h1').first().text().trim();
-        profileData.bio = $('meta[property="og:description"]').attr('content') || '';
-        profileData.imageUrl = $('meta[property="og:image"]').attr('content') || '';
-      }
-    } else if (url.includes('linkedin.com')) {
-      // Load LinkedIn profile HTML into cheerio
-      const $ = load(html);
-      // Attempt to get name and headline from public profile
-      let fullName = $('h1').first().text().trim();
-      if (!fullName) {
-        // Fallback to <title> parsing if h1 not accessible
-        fullName = ($('title').text() || '').split('|')[0].trim();
-      }
-      let headline = $('h2').first().text().trim();
-      if (!headline) {
-        // Public profile might have headline in the meta description
-        headline = $('meta[name="description"]').attr('content') || '';
-      }
-      const imageUrl = $('meta[property="og:image"]').attr('content') || '';
-      profileData.name = fullName;
-      profileData.bio = headline;
-      profileData.imageUrl = imageUrl;
+    if (!profileUrl) {
+      return null;
     }
-  } catch (err) {
-    log('Error scraping profile:', err.message || err);
-    // In case of error, return whatever was gathered (possibly empty fields)
+    
+    // Normaliza a entrada (URL ou @username)
+    let normalizedUrl = profileUrl;
+    let platform = 'unknown';
+    
+    // Verifica se é um @username do Instagram
+    if (profileUrl.startsWith('@')) {
+      const username = profileUrl.substring(1);
+      normalizedUrl = `https://www.instagram.com/${username}/`;
+      platform = 'instagram';
+    }
+    // Verifica se é uma URL do Instagram
+    else if (profileUrl.includes('instagram.com')) {
+      platform = 'instagram';
+    }
+    // Verifica se é uma URL do LinkedIn
+    else if (profileUrl.includes('linkedin.com')) {
+      platform = 'linkedin';
+    }
+    
+    // Extrai o username da URL
+    let username = null;
+    try {
+      const urlObj = new URL(normalizedUrl);
+      const path = urlObj.pathname.replace(/^\/|\/$/g, '');
+      
+      if (platform === 'instagram') {
+        username = path.split('/')[0];
+      } else if (platform === 'linkedin') {
+        if (path.startsWith('in/')) {
+          username = path.substring(3).split('/')[0];
+        } else if (path.startsWith('company/')) {
+          username = path.substring(8).split('/')[0];
+        }
+      }
+    } catch (error) {
+      // Se não for uma URL válida, usa o valor original
+      username = profileUrl.replace('@', '');
+    }
+    
+    // Retorna os dados básicos do perfil
+    // Em um ambiente real, aqui seria feita uma chamada para um serviço de scraping
+    return {
+      username,
+      platform,
+      url: normalizedUrl,
+      lastUpdated: new Date().toISOString()
+    };
+  } catch (error) {
+    log('Erro ao extrair informações do perfil:', error);
+    return null;
   }
-
-  return profileData;
 }
 
-export default { scrapeProfile };
+/**
+ * Analisa um perfil para extrair insights usando OpenAI
+ * @param {string} profileUrl - URL ou username do perfil
+ * @returns {Promise<string>} - Texto com insights sobre o perfil
+ */
+export async function analyzeProfileWithAI(profileUrl) {
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+  const OPENAI_API_URL = process.env.OPENAI_API_URL || "https://api.openai.com/v1/chat/completions";
+  
+  try {
+    const profileData = await scrapeProfile(profileUrl);
+    
+    if (!profileData) {
+      return '';
+    }
+    
+    const prompt = `Analise este perfil de ${profileData.platform}:
+Username: ${profileData.username}
+URL: ${profileData.url}
+
+Extraia insights sobre a personalidade, interesses e características profissionais desta pessoa com base nas informações disponíveis.`;
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`
+    };
+    
+    const body = {
+      model: "gpt-4o",
+      messages: [
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 500
+    };
+    
+    const response = await axios.post(OPENAI_API_URL, body, { headers });
+    return response.data.choices[0].message.content;
+  } catch (error) {
+    log('Erro ao analisar perfil com IA:', error);
+    return '';
+  }
+}
