@@ -1,9 +1,13 @@
-/**
- * Simple logger utility to prepend timestamps to logs.
- */
-function log(...args) {
-  const timestamp = new Date().toISOString();
-  console.log(timestamp, ...args);
+export function logInfo(message, data = null) {
+  console.log(`[INFO] ${message}`);
+  if (data) {
+    console.log(data);
+  }
 }
 
-export { log };
+export function logError(message, error = null) {
+  console.error(`[ERROR] ${message}`);
+  if (error) {
+    console.error(error);
+  }
+}
