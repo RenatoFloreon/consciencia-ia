@@ -1,297 +1,418 @@
 import sessionService from '../services/sessionService.js';
-import scrapingService from '../services/scrapingService.js';
-import * as openaiService from '../services/openaiService.js';
 import whatsappService from '../services/whatsappService.js';
+import * as openaiService from '../services/openaiService.js';
 import * as visionAnalysisService from '../services/visionAnalysisService.js';
+import * as profileScraperService from '../services/profileScraperService.js';
 import interactionService from '../services/interactionService.js';
 import { log } from '../utils/logger.js';
 
+// Constantes para os estados da conversa
+const CONVERSATION_STATES = {
+  INITIAL: 'initial',
+  WAITING_NAME: 'waiting_name',
+  WAITING_EMAIL: 'waiting_email',
+  WAITING_PROFILE: 'waiting_profile',
+  WAITING_CHALLENGE: 'waiting_challenge',
+  GENERATING_LETTER: 'generating_letter',
+  LETTER_DELIVERED: 'letter_delivered',
+  WAITING_COMMAND: 'waiting_command'
+};
+
+// Mensagens padrão do sistema
+const SYSTEM_MESSAGES = {
+  WELCOME: `Olá! 👋 Bem-vindo(a) ao *Conselheiro da Consciênc.IA* do evento MAPA DO LUCRO!
+
+Sou um assistente virtual especial criado para gerar sua *Carta de Consciência* personalizada – uma análise única baseada no seu perfil digital que revelará insights valiosos sobre seu comportamento empreendedor e recomendações práticas de como usar IA no seu negócio.
+
+Para começar, preciso conhecer você melhor.
+Por favor, como gostaria de ser chamado(a)?`,
+
+  ASK_EMAIL: `Obrigado, {name}! 😊
+
+Para enviarmos materiais após o evento, por favor, informe seu e-mail:
+
+(Caso não queira informar agora, digite "pular" para continuar)`,
+
+  ASK_PROFILE: `Perfeito! Agora, para gerar sua Carta de Consciência personalizada, preciso analisar seu perfil digital.
+
+Por favor, me envie o link do seu perfil público do Instagram ou LinkedIn.
+Exemplo: https://www.instagram.com/seuusuario
+
+(Você também pode enviar apenas seu @usuário, ou até mesmo uma imagem do perfil / print.)`,
+
+  ASK_CHALLENGE: `Obrigado! Agora me conta, em apenas uma frase ou palavra, qual é o maior desafio que você tem enfrentado no seu *Negócio* no momento?`,
+
+  GENERATING_LETTER: `Obrigado por compartilhar! 🙏
+
+Vou analisar seu perfil e gerar sua Carta de Consciência personalizada. Isso pode levar alguns instantes... ⏳`,
+
+  LETTER_DELIVERED: `✨ Sua Carta de Consciência personalizada foi entregue! ✨
+
+Posso ajudar com mais algo? Digite *"IA"* para saber como a IA pode ajudar você hoje, *"inspiração"* para outra inspiração personalizada, ou *"não"* para encerrar.`,
+
+  ERROR_MESSAGE: `Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.`,
+
+  RESTART_MESSAGE: `Algo deu errado, vamos começar novamente? Envie *"Quero receber a minha Carta!"* para reiniciar o processo.`,
+
+  FINAL_MESSAGE: `Gratidão por participar do Programa Consciênc.IA! 🙏
+
+Se quiser saber mais sobre como a IA pode transformar seu negócio, fale com nosso time através do e-mail contato@consciencia.ia
+
+Até breve! ✨`
+};
+
 /**
- * Handles an incoming message from a user, using a finite state conversational flow.
- * @param {string} from - The user's WhatsApp ID (phone number).
- * @param {string} messageText - The text content of the user's message.
- * @returns {Promise<string[]>} - An array of response message texts to send back.
+ * Processa mensagens recebidas do webhook do WhatsApp
+ * @param {Object} req - Objeto de requisição Express
+ * @param {Object} res - Objeto de resposta Express
  */
-async function handleIncomingMessage(from, messageText) {
-  // Retrieve or initialize session state for this user
-  let session = await sessionService.getSession(from);
-  if (!session) {
-    session = {};
-  }
-  let state = session.state || null;
-  const userMsg = messageText.trim();
-  const normalized = userMsg.toLowerCase();
-  if (normalized === 'quero recomeçar') {
-    await sessionService.deleteSession(from);
-    return ["Ok, vamos recomeçar! Envie *\"Quero receber a minha Carta!\"* para iniciar um novo atendimento."];
-  }
-
-  // If no active state, check if user is initiating the conversation with the trigger phrase
-  if (!state) {
-    if (normalized.includes('quero receber') && normalized.includes('minha carta')) {
-      // User triggered the Carta generation flow
-      session.state = 'WAITING_NAME';
-      session.startTimestamp = Date.now();
-      await sessionService.saveSession(from, session);
-      // First message: greeting and ask for name
-      const greeting = "Olá! 👋 Bem-vindo(a) ao *Conselheiro da Consciênc.IA* do evento MAPA DO LUCRO!\n\nSou um assistente virtual especial criado para gerar sua **Carta de Consciência** personalizada – uma análise única baseada no seu perfil digital que revelará insights valiosos sobre seu comportamento empreendedor e recomendações práticas de como usar IA no seu negócio.\n\nPara começar, preciso conhecer você melhor.\nPor favor, como gostaria de ser chamado(a)?";
-      return [ greeting ];
-    } else {
-      // No session and no trigger phrase – ignore or prompt user to start with trigger
-      return [];
-    }
-  }
-
-  const responses = [];
+export async function processMessage(req, res) {
   try {
-    switch (state) {
-      case 'WAITING_NAME': {
-        // Save the provided name
-        const name = userMsg;
-        session.name = name;
-        session.state = 'WAITING_EMAIL';
-        await sessionService.saveSession(from, session);
-        const askEmail = "Obrigado, " + name + "! 😊\n\nPara enviarmos materiais após o evento, por favor, informe seu e-mail:\n\n(Caso não queira informar agora, digite \"pular\" para continuar)";
-        responses.push(askEmail);
-        break;
-      }
-      case 'WAITING_EMAIL': {
-        let email = userMsg;
-        if (email.toLowerCase() === 'pular') {
-          email = null;
-        }
-        session.email = email;
-        session.state = 'WAITING_PROFILE';
-        await sessionService.saveSession(from, session);
-        const askProfile = "Perfeito! Agora, para gerar sua Carta de Consciência personalizada, preciso analisar seu perfil digital.\n\nPor favor, me envie o link do seu perfil público do Instagram ou LinkedIn.\nExemplo: https://www.instagram.com/seuusuario\n\n*(Você também pode enviar apenas seu @usuário, ou até mesmo uma imagem do perfil / print.)*";
-        responses.push(askProfile);
-        break;
-      }
-      case 'WAITING_PROFILE': {
-        let profileInput = userMsg;
-        // Determine input type and format profile input
-        if (profileInput.startsWith('<imagemUrl:')) {
-          const imageUrl = profileInput.slice(profileInput.indexOf(':') + 1, -1);
-          session.profileImageUrl = imageUrl;
-          // Classify image type (screenshot vs photo)
-          let imgType = null;
-          try {
-            imgType = await visionAnalysisService.classifyImageType(imageUrl);
-          } catch (err) {
-            imgType = null;
-          }
-          session.inputType = (imgType === 'screenshot' ? 'print' : 'image');
-          session.state = 'WAITING_PROF_CHALLENGE';
-          await sessionService.saveSession(from, session);
-          responses.push("Obrigado pela imagem do perfil!");
-          const askBusiness = "Agora me conta, em apenas uma frase ou palavra, qual é o maior desafio que você tem enfrentado no seu *Negócio* no momento?";
-          responses.push(askBusiness);
-          break;
-        }
-        if (!profileInput.startsWith('http')) {
-          if (profileInput.startsWith('@')) {
-            profileInput = 'https://www.instagram.com/' + profileInput.slice(1);
-            session.inputType = 'username';
-          } else if (profileInput.includes('instagram.com') || profileInput.includes('linkedin.com')) {
-            profileInput = 'https://' + profileInput;
-            session.inputType = 'link';
-          } else {
-            profileInput = 'https://' + profileInput;
-            session.inputType = 'link';
-          }
-        } else {
-          session.inputType = 'link';
-        }
-        session.profileLink = profileInput;
-        session.state = 'WAITING_PROF_CHALLENGE';
-        await sessionService.saveSession(from, session);
-        const askBusiness = "Obrigado! Agora me conta, em apenas uma frase ou palavra, qual é o maior desafio que você tem enfrentado no seu *Negócio* no momento?";
-        responses.push(askBusiness);
-        break;
-      }
-      case 'WAITING_PROF_CHALLENGE': {
-        // User provided professional challenge, now ask for personal challenge
-        session.profChallenge = userMsg;
-        session.state = 'WAITING_PERS_CHALLENGE';
-        await sessionService.saveSession(from, session);
-        const askPersonal = "Entendi! E na sua vida pessoal, qual tem sido o maior desafio? (Responda com uma única palavra ou frase)";
-        responses.push(askPersonal);
-        break;
-      }
-      case 'WAITING_PERS_CHALLENGE': {
-        // User provided personal challenge, now we have all inputs to generate the letter
-        session.persChallenge = userMsg;
-        session.state = 'GENERATING_LETTER';
-        await sessionService.saveSession(from, session);
-        // Acknowledge receipt and inform user we are generating the letter
-        const processingMsg = "Gratidão por compartilhar! 🙏\nVou analisar seu perfil e gerar sua Carta de Consciência personalizada. Isso pode levar alguns instantes... ⏳";
-        responses.push(processingMsg);
-        // Gather profile data via scraping or vision analysis
-        let profileData = null;
-        if (session.profileLink) {
-          profileData = await scrapingService.scrapeProfile(session.profileLink);
-        }
-        if (!session.profileLink && session.profileImageUrl) {
-          // Analyze image input if provided
-          try {
-            const imageAnalysis = await visionAnalysisService.analyzeProfileImage(session.profileImageUrl);
-            profileData = { name: '', bio: imageAnalysis || '', imageUrl: session.profileImageUrl, posts: [] };
-          } catch (err) {
-            profileData = { name: '', bio: '', imageUrl: session.profileImageUrl, posts: [] };
-          }
-        }
-        // If profile is protected or scrape failed, warn the user
-        if (!profileData || ((profileData.bio === '' || !profileData.bio) && (!profileData.posts || profileData.posts.length === 0))) {
-          responses.push("Seu perfil parece estar protegido ou não pôde ser analisado completamente. Vou prosseguir com as informações disponíveis.");
-        }
-        // Generate the personalized letter using OpenAI
-        const letterContent = await openaiService.generateLetter(session.name, profileData || {}, session.profChallenge, session.persChallenge);
-        if (!letterContent) {
-          responses.push("Desculpe, não consegui gerar sua Carta de Consciência no momento. Por favor, tente novamente mais tarde.");
-          await sessionService.deleteSession(from);
-          break;
-        }
-        // If letter is too long, send first part and ask user if they want the rest
-        if (letterContent.length > 3000) {
-          const part1 = letterContent.substring(0, 3000);
-          const part2 = letterContent.substring(3000);
-          const part1Segments = whatsappService.splitMessage(part1, 1600);
-          for (const seg of part1Segments) {
-            responses.push(seg);
-          }
-          responses.push("A carta ficou um pouco longa. Deseja receber o restante dela? Responda *\"sim\"* para ver o restante ou *\"não\"* para finalizar.");
-          session.pendingLetter = part2;
-          session.state = 'WAITING_LETTER_CONFIRM';
-          await sessionService.saveSession(from, session);
-          // Log the delivered part of the letter as an interaction (full letter content stored)
-          const interactionData = {
-            type: 'letter_delivered',
-            name: session.name || '',
-            phoneNumber: from,
-            email: session.email || '',
-            profileUrl: session.profileLink || '',
-            imageId: session.profileImageUrl || '',
-            inputType: session.inputType || '',
-            businessChallenge: session.profChallenge || '',
-            personalChallenge: session.persChallenge || '',
-            letterContent: letterContent,
-            startTimestamp: session.startTimestamp || Date.now(),
-            timestamp: Date.now(),
-            letterIsGeneric: !profileData || ((profileData.name === '' || !profileData.name) && (profileData.bio === '' || !profileData.bio) && (!profileData.posts || profileData.posts.length === 0))
-          };
-          await interactionService.saveInteraction(interactionData);
-          break;
-        }
-        // Split the letter into chunks if it is lengthy (WhatsApp limit ~1600 chars)
-        const letterParts = whatsappService.splitMessage(letterContent, 1600);
-        for (const part of letterParts) {
-          responses.push(part);
-        }
-        // After sending the Carta, ask if the user wants more assistance or another inspiration
-        session.state = 'WAITING_MORE_INFO';
-        await sessionService.saveSession(from, session);
-        const followUp = "✨ *Sua Carta de Consciência personalizada foi entregue!* ✨\n\nPosso ajudar com mais algo? Digite **\"IA\"** para saber como a IA pode ajudar você hoje, **\"inspiração\"** para outra inspiração personalizada, ou **\"não\"** para encerrar.";
-        responses.push(followUp);
-        // Log the interaction data
-        const interactionData = {
-          type: 'letter_delivered',
-          name: session.name || '',
-          phoneNumber: from,
-          email: session.email || '',
-          profileUrl: session.profileLink || '',
-          imageId: session.profileImageUrl || '',
-          inputType: session.inputType || '',
-          businessChallenge: session.profChallenge || '',
-          personalChallenge: session.persChallenge || '',
-          letterContent: letterContent,
-          startTimestamp: session.startTimestamp || Date.now(),
-          timestamp: Date.now(),
-          letterIsGeneric: !profileData || ((profileData.name === '' || !profileData.name) && (profileData.bio === '' || !profileData.bio) && (!profileData.posts || profileData.posts.length))
-        };
-        await interactionService.saveInteraction(interactionData);
-        break;
-      }
-      case 'WAITING_LETTER_CONFIRM': {
-        const choice = userMsg.toLowerCase();
-        if (choice.includes('sim')) {
-          // User wants the remaining letter content
-          if (session.pendingLetter) {
-            const remainingSegments = whatsappService.splitMessage(session.pendingLetter, 1600);
-            for (const seg of remainingSegments) {
-              responses.push(seg);
-            }
-          }
-          // After delivering the rest, proceed to follow-up suggestions
-          session.state = 'WAITING_MORE_INFO';
-          await sessionService.saveSession(from, session);
-          const followUp = "✨ *Carta completa entregue!* ✨\n\nPosso ajudar com mais algo? Digite **\"IA\"** para saber como a IA pode ajudar você hoje, **\"inspiração\"** para outra inspiração personalizada, ou **\"não\"** para encerrar.";
-          responses.push(followUp);
-        } else {
-          // User does not want the rest of the letter
-          responses.push("Entendido, não enviarei o restante da carta.");
-          session.state = 'WAITING_MORE_INFO';
-          await sessionService.saveSession(from, session);
-          const followUp = "Posso ajudar com mais algo? Digite **\"IA\"** para saber como a IA pode ajudar hoje, **\"inspiração\"** para outra inspiração personalizada, ou **\"não\"** para encerrar.";
-          responses.push(followUp);
-        }
-        break;
-      }
-      case 'WAITING_MORE_INFO': {
-        const choice = userMsg.toLowerCase();
-        if (choice.includes('ia') || choice.includes('ajuda') || choice.includes('sim')) {
-          // User is interested in how AI can help (single question flow)
-          session.state = 'WAITING_ONE_CHALLENGE';
-          await sessionService.saveSession(from, session);
-          const singleQuestion = "🤖 Se você pudesse resolver apenas *UM* desafio neste momento, qual seria esse desafio que, ao ser superado, traria os resultados que você mais deseja?";
-          responses.push(singleQuestion);
-        } else if (choice.includes('inspira')) {
-          // User wants another inspiration (restart process)
-          responses.push("Claro! Vamos começar outra inspiração personalizada. Envie *\"Quero receber a minha Carta!\"* para iniciarmos um novo processo.");
-          await sessionService.deleteSession(from);
-        } else {
-          // User not interested or said no
-          responses.push("Sem problemas! 😊 Foi um prazer ajudar você com sua Carta de Consciência. Sucesso! 💫");
-          await sessionService.deleteSession(from);
-        }
-        break;
-      }
-      case 'WAITING_ONE_CHALLENGE': {
-        const userChallenge = userMsg;
-        // Generate AI assistance answer for the single challenge
-        const answer = await openaiService.generateFollowupAnswer(userChallenge);
-        if (answer) {
-          responses.push(answer);
-        } else {
-          responses.push("Desculpe, não consegui elaborar uma resposta no momento.");
-        }
-        responses.push("Espero que essas ideias ajudem você! Se precisar de algo mais, é só me chamar. 🤖");
-        // Log the follow-up question interaction
-        const interactionData = {
-          type: 'followup_question',
-          name: session.name || '',
-          phoneNumber: from,
-          question: userChallenge,
-          answer: answer || '',
-          timestamp: Date.now()
-        };
-        await interactionService.saveInteraction(interactionData);
-        // End conversation
-        await sessionService.deleteSession(from);
-        break;
-      }
-      default:
-        // If somehow an unknown state, reset the session
-        await sessionService.deleteSession(from);
-        responses.push("Algo deu errado, vamos começar novamente? Envie *\"Quero receber a minha Carta!\"* para reiniciar o processo.");
-        break;
+    // Responde imediatamente ao webhook para evitar timeout
+    res.status(200).send('EVENT_RECEIVED');
+
+    const body = req.body;
+    
+    // Verifica se é uma mensagem válida
+    if (!body.object || !body.entry || !body.entry[0].changes || !body.entry[0].changes[0].value.messages) {
+      return;
+    }
+
+    const message = body.entry[0].changes[0].value.messages[0];
+    const phoneNumber = message.from;
+    
+    // Registra a mensagem recebida para depuração
+    log(`Mensagem recebida de ${phoneNumber}: ${JSON.stringify(message)}`);
+
+    // Processa a mensagem com base no tipo
+    if (message.type === 'text') {
+      await handleTextMessage(phoneNumber, message.text.body);
+    } else if (message.type === 'image') {
+      await handleImageMessage(phoneNumber, message.image);
+    } else {
+      // Tipo de mensagem não suportado
+      await whatsappService.sendTextMessage(
+        phoneNumber,
+        "Desculpe, só posso processar mensagens de texto ou imagens no momento."
+      );
     }
   } catch (error) {
-    log('Error in conversation flow:', error);
-    responses.push("Desculpe, ocorreu um erro inesperado. Por favor, tente novamente mais tarde.");
-    // Optionally reset session on error
-    await sessionService.deleteSession(from);
+    log('Erro ao processar mensagem:', error);
+    res.status(500).send('ERROR');
   }
-  return responses;
 }
 
-export default { handleIncomingMessage };
+/**
+ * Processa mensagens de texto recebidas
+ * @param {string} phoneNumber - Número de telefone do remetente
+ * @param {string} messageText - Texto da mensagem
+ */
+async function handleTextMessage(phoneNumber, messageText) {
+  try {
+    // Obtém ou cria a sessão do usuário
+    let session = await sessionService.getSession(phoneNumber);
+    
+    // Se não houver sessão, cria uma nova
+    if (!session) {
+      session = {
+        phoneNumber,
+        state: CONVERSATION_STATES.INITIAL,
+        data: {}
+      };
+    }
+
+    // Verifica se é uma mensagem de reinício
+    if (messageText.toLowerCase().includes('quero receber') && messageText.toLowerCase().includes('carta')) {
+      session = {
+        phoneNumber,
+        state: CONVERSATION_STATES.INITIAL,
+        data: {}
+      };
+      await sessionService.saveSession(phoneNumber, session);
+      await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.WELCOME);
+      return;
+    }
+
+    // Processa a mensagem com base no estado atual da conversa
+    switch (session.state) {
+      case CONVERSATION_STATES.INITIAL:
+        // Inicia a conversa
+        session.state = CONVERSATION_STATES.WAITING_NAME;
+        await sessionService.saveSession(phoneNumber, session);
+        await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.WELCOME);
+        break;
+
+      case CONVERSATION_STATES.WAITING_NAME:
+        // Salva o nome e solicita o e-mail
+        session.data.name = messageText.trim();
+        session.state = CONVERSATION_STATES.WAITING_EMAIL;
+        await sessionService.saveSession(phoneNumber, session);
+        
+        const emailMessage = SYSTEM_MESSAGES.ASK_EMAIL.replace('{name}', session.data.name);
+        await whatsappService.sendTextMessage(phoneNumber, emailMessage);
+        break;
+
+      case CONVERSATION_STATES.WAITING_EMAIL:
+        // Salva o e-mail e solicita o perfil
+        if (messageText.toLowerCase() !== 'pular') {
+          session.data.email = messageText.trim();
+        }
+        session.state = CONVERSATION_STATES.WAITING_PROFILE;
+        await sessionService.saveSession(phoneNumber, session);
+        await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.ASK_PROFILE);
+        break;
+
+      case CONVERSATION_STATES.WAITING_PROFILE:
+        // Processa o perfil (link ou @) e solicita o desafio
+        session.data.profileInput = messageText.trim();
+        
+        // Verifica se é um @username ou link completo
+        if (messageText.startsWith('@') || messageText.includes('instagram.com') || messageText.includes('linkedin.com')) {
+          session.data.profileUrl = messageText.trim();
+          session.data.inputType = 'username';
+          
+          // Tenta extrair informações do perfil
+          try {
+            const profileData = await profileScraperService.scrapeProfile(session.data.profileUrl);
+            if (profileData) {
+              session.data.profileData = profileData;
+            }
+          } catch (error) {
+            log('Erro ao extrair dados do perfil:', error);
+            // Continua mesmo se falhar, pois é opcional
+          }
+        }
+        
+        session.state = CONVERSATION_STATES.WAITING_CHALLENGE;
+        await sessionService.saveSession(phoneNumber, session);
+        await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.ASK_CHALLENGE);
+        break;
+
+      case CONVERSATION_STATES.WAITING_CHALLENGE:
+        // Salva o desafio e inicia a geração da carta
+        session.data.challenge = messageText.trim();
+        session.state = CONVERSATION_STATES.GENERATING_LETTER;
+        session.data.startTimestamp = Date.now();
+        await sessionService.saveSession(phoneNumber, session);
+        
+        // Informa que está gerando a carta
+        await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.GENERATING_LETTER);
+        
+        // Gera a carta em background
+        generateAndSendLetter(phoneNumber, session);
+        break;
+
+      case CONVERSATION_STATES.LETTER_DELIVERED:
+      case CONVERSATION_STATES.WAITING_COMMAND:
+        // Processa comandos após a entrega da carta
+        session.state = CONVERSATION_STATES.WAITING_COMMAND;
+        await sessionService.saveSession(phoneNumber, session);
+        
+        const command = messageText.toLowerCase();
+        
+        if (command === 'ia') {
+          // Envia informações sobre IA
+          const iaMessage = await openaiService.generateIAHelp(session.data.name, session.data.challenge);
+          await whatsappService.sendTextMessage(phoneNumber, iaMessage);
+        } else if (command === 'inspiração' || command === 'inspiracao') {
+          // Envia uma nova inspiração
+          const inspiration = await openaiService.generateInspiration(session.data.name, session.data.challenge);
+          await whatsappService.sendTextMessage(phoneNumber, inspiration);
+        } else if (command === 'não' || command === 'nao') {
+          // Encerra a conversa
+          await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.FINAL_MESSAGE);
+          // Opcional: limpar a sessão após encerramento
+          // await sessionService.deleteSession(phoneNumber);
+        } else {
+          // Comando não reconhecido
+          await whatsappService.sendTextMessage(
+            phoneNumber,
+            "Desculpe, não entendi. Digite *\"IA\"* para saber como a IA pode ajudar você hoje, *\"inspiração\"* para outra inspiração personalizada, ou *\"não\"* para encerrar."
+          );
+        }
+        break;
+
+      default:
+        // Estado desconhecido, reinicia a conversa
+        session = {
+          phoneNumber,
+          state: CONVERSATION_STATES.INITIAL,
+          data: {}
+        };
+        await sessionService.saveSession(phoneNumber, session);
+        await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.RESTART_MESSAGE);
+    }
+  } catch (error) {
+    log('Erro ao processar mensagem de texto:', error);
+    await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.ERROR_MESSAGE);
+  }
+}
+
+/**
+ * Processa mensagens de imagem recebidas
+ * @param {string} phoneNumber - Número de telefone do remetente
+ * @param {Object} imageData - Dados da imagem
+ */
+async function handleImageMessage(phoneNumber, imageData) {
+  try {
+    // Obtém ou cria a sessão do usuário
+    let session = await sessionService.getSession(phoneNumber);
+    
+    // Se não houver sessão, cria uma nova
+    if (!session) {
+      session = {
+        phoneNumber,
+        state: CONVERSATION_STATES.INITIAL,
+        data: {}
+      };
+      await sessionService.saveSession(phoneNumber, session);
+      await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.WELCOME);
+      return;
+    }
+
+    // Processa a imagem apenas se estiver esperando o perfil
+    if (session.state === CONVERSATION_STATES.WAITING_PROFILE) {
+      // Obtém a URL da imagem
+      const imageId = imageData.id;
+      const imageUrl = await whatsappService.getMediaUrl(imageId);
+      
+      if (!imageUrl) {
+        await whatsappService.sendTextMessage(
+          phoneNumber,
+          "Desculpe, não consegui processar sua imagem. Por favor, tente enviar um link do seu perfil ou @usuário."
+        );
+        return;
+      }
+
+      // Classifica o tipo de imagem (screenshot ou foto)
+      const imageType = await visionAnalysisService.classifyImageType(imageUrl);
+      
+      // Salva os dados da imagem na sessão
+      session.data.profileUrl = imageUrl;
+      session.data.imageId = imageId;
+      session.data.inputType = imageType;
+      
+      // Analisa a imagem para extrair insights
+      try {
+        const imageAnalysis = await visionAnalysisService.analyzeImageFromUrl(imageUrl);
+        if (imageAnalysis) {
+          session.data.imageAnalysis = imageAnalysis;
+        }
+      } catch (error) {
+        log('Erro ao analisar imagem:', error);
+        // Continua mesmo se falhar, pois é opcional
+      }
+
+      // Avança para o próximo estado
+      session.state = CONVERSATION_STATES.WAITING_CHALLENGE;
+      await sessionService.saveSession(phoneNumber, session);
+      await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.ASK_CHALLENGE);
+    } else {
+      // Não está no estado correto para receber imagens
+      await whatsappService.sendTextMessage(
+        phoneNumber,
+        "Desculpe, não estou esperando uma imagem neste momento. Por favor, siga as instruções anteriores."
+      );
+    }
+  } catch (error) {
+    log('Erro ao processar mensagem de imagem:', error);
+    await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.ERROR_MESSAGE);
+  }
+}
+
+/**
+ * Gera e envia a carta personalizada
+ * @param {string} phoneNumber - Número de telefone do usuário
+ * @param {Object} session - Dados da sessão do usuário
+ */
+async function generateAndSendLetter(phoneNumber, session) {
+  try {
+    // Extrai os dados necessários da sessão
+    const { name, challenge, profileUrl, profileData, imageAnalysis, inputType } = session.data;
+    
+    // Gera a carta personalizada
+    const letterContent = await openaiService.generateConscienceLetter({
+      name,
+      challenge,
+      profileUrl,
+      profileData,
+      imageAnalysis,
+      inputType
+    });
+    
+    // Divide a carta em partes para evitar limite de caracteres do WhatsApp
+    const letterParts = splitMessage(letterContent, 4000);
+    
+    // Envia cada parte da carta
+    for (const part of letterParts) {
+      await whatsappService.sendTextMessage(phoneNumber, part);
+    }
+    
+    // Atualiza o estado da sessão
+    session.state = CONVERSATION_STATES.LETTER_DELIVERED;
+    session.data.letterContent = letterContent;
+    session.data.endTimestamp = Date.now();
+    session.data.processingTime = session.data.endTimestamp - session.data.startTimestamp;
+    session.data.status = 'completed';
+    await sessionService.saveSession(phoneNumber, session);
+    
+    // Salva a interação para o painel administrativo
+    await interactionService.saveInteraction({
+      phoneNumber,
+      name: session.data.name,
+      email: session.data.email,
+      profileUrl: session.data.profileUrl,
+      challenge: session.data.challenge,
+      inputType: session.data.inputType,
+      letterContent: letterContent,
+      startTimestamp: session.data.startTimestamp,
+      endTimestamp: session.data.endTimestamp,
+      processingTime: session.data.processingTime,
+      status: 'completed'
+    });
+    
+    // Envia mensagem de conclusão
+    await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.LETTER_DELIVERED);
+  } catch (error) {
+    log('Erro ao gerar e enviar carta:', error);
+    
+    // Atualiza o estado da sessão para indicar erro
+    session.state = CONVERSATION_STATES.INITIAL;
+    session.data.status = 'error';
+    session.data.error = error.message;
+    await sessionService.saveSession(phoneNumber, session);
+    
+    // Salva a interação com status de erro
+    await interactionService.saveInteraction({
+      phoneNumber,
+      name: session.data.name,
+      email: session.data.email,
+      profileUrl: session.data.profileUrl,
+      challenge: session.data.challenge,
+      inputType: session.data.inputType,
+      status: 'error',
+      error: error.message
+    });
+    
+    // Envia mensagem de erro
+    await whatsappService.sendTextMessage(phoneNumber, SYSTEM_MESSAGES.ERROR_MESSAGE);
+  }
+}
+
+/**
+ * Divide uma mensagem longa em partes menores
+ * @param {string} message - Mensagem a ser dividida
+ * @param {number} maxLength - Tamanho máximo de cada parte
+ * @returns {Array<string>} - Array de partes da mensagem
+ */
+function splitMessage(message, maxLength = 4000) {
+  if (!message || message.length <= maxLength) {
+    return [message];
+  }
+  
+  const parts = [];
+  let currentIndex = 0;
+  
+  while (currentIndex < message.length) {
+    // Encontra um ponto final pr
+(Content truncated due to size limit. Use line ranges to read in chunks)
