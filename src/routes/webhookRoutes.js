@@ -34,7 +34,7 @@ router.get('/webhook', (req, res) => {
   }
 });
 
-// Rota para receber mensagens do WhatsApp
+// Na rota POST /webhook
 router.post('/webhook', (req, res) => {
   try {
     log('POST /webhook - Mensagem recebida');
@@ -44,12 +44,15 @@ router.post('/webhook', (req, res) => {
     res.status(200).send('OK');
     
     // Processa a mensagem recebida de forma assíncrona
-    processMessage(req, res).catch(err => {
-      log('Erro ao processar mensagem:', err);
-    });
+    processMessage(req, req.body)  // Modificado para passar o corpo da requisição diretamente
+      .then(() => {
+        log('Mensagem processada com sucesso');
+      })
+      .catch(err => {
+        log('Erro ao processar mensagem:', err);
+      });
   } catch (error) {
     log('Erro no webhook:', error);
-    // Já respondemos acima, então não precisamos responder novamente
   }
 });
 
