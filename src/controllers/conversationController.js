@@ -454,7 +454,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Informa que está gerando a carta
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "⏳ Estou analisando suas informações e preparando sua Carta da Consciênc.IA…\nIsso pode levar alguns instantes...\n\n🌟 Sinta-se confortável. A magia está acontecendo."
+      "⏳ Estou analisando suas informações e preparando sua Carta da Consciênc.IA…\nIsso pode levar alguns instantes...\n\n🌟 Respire fundo enquanto a magia acontece."
     );
     
     // Gera a carta de consciência
