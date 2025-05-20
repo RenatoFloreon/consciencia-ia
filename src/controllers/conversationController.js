@@ -353,7 +353,7 @@ async function processBusiness(userPhoneNumber, business, session) {
     // Solicita o perfil
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Perfeito! Agora, para gerar sua Carta de Consciência personalizada, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:\n\n1️⃣ Envie um **print do seu perfil social** (Instagram ou LinkedIn) para uma leitura mais profunda.\n2️⃣ Envie **sua foto de perfil** (uma imagem que te represente hoje).\n3️⃣ Ou apenas me diga seu @ (ex: @renatohilel.oficial) para uma leitura objetiva.\n\n📝 Envie agora da forma que preferir!"
+      "Perfeito! Agora, para gerar sua Carta da Consciênc.IA personalizada, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:\n\n1️⃣ Envie um **print do seu perfil social** (Instagram ou LinkedIn) para uma leitura mais profunda.\n2️⃣ Envie **sua foto de perfil** (uma imagem que te represente hoje).\n3️⃣ Ou apenas me diga seu @ (ex: @renatohilel.oficial) para uma leitura objetiva.\n\n📝 Envie agora da forma que preferir!"
     );
   } catch (error) {
     log('Erro ao processar negócio:', error);
@@ -509,55 +509,68 @@ async function processChallenge(userPhoneNumber, challenge, session) {
       // Envia a carta em uma única mensagem
       await whatsappService.sendTextMessage(userPhoneNumber, letterContent);
     } else {
-      // Divide a carta em partes
+      // Divide a carta em partes usando quebras naturais, sem numeração
       let remainingContent = letterContent;
-      let partNumber = 1;
       
       while (remainingContent.length > 0) {
-        // Encontra um ponto de quebra adequado
+        // Encontra um ponto de quebra natural adequado
         let breakPoint = maxPartLength;
         if (remainingContent.length > maxPartLength) {
-          // Procura por um ponto final, interrogação ou exclamação antes do limite
-          const lastPeriod = remainingContent.lastIndexOf('.', maxPartLength);
-          const lastQuestion = remainingContent.lastIndexOf('?', maxPartLength);
-          const lastExclamation = remainingContent.lastIndexOf('!', maxPartLength);
-          const lastNewLine = remainingContent.lastIndexOf('\n', maxPartLength);
-          
-          // Encontra o último ponto de quebra válido
-          const possibleBreaks = [lastPeriod, lastQuestion, lastExclamation, lastNewLine]
-            .filter(index => index > 0)
-            .sort((a, b) => b - a);
-          
-          if (possibleBreaks.length > 0) {
-            breakPoint = possibleBreaks[0] + 1; // Inclui o caractere de pontuação
+          // Procura por quebras naturais: seções marcadas com "---", parágrafos, ou pontuação
+          const sectionBreak = remainingContent.indexOf('\n---\n', 0);
+          if (sectionBreak > 0 && sectionBreak < maxPartLength) {
+            // Prioriza quebras de seção se estiverem dentro do limite
+            breakPoint = sectionBreak + 5; // Inclui o marcador "---" e as quebras de linha
           } else {
-            // Se não encontrou um ponto de quebra adequado, procura por um espaço
-            const lastSpace = remainingContent.lastIndexOf(' ', maxPartLength);
-            if (lastSpace > 0) {
-              breakPoint = lastSpace + 1;
+            // Procura por pontuação seguida de quebra de linha
+            const lastPeriodNewline = remainingContent.lastIndexOf('.\n', maxPartLength);
+            const lastQuestionNewline = remainingContent.lastIndexOf('?\n', maxPartLength);
+            const lastExclamationNewline = remainingContent.lastIndexOf('!\n', maxPartLength);
+            
+            // Procura por pontuação simples
+            const lastPeriod = remainingContent.lastIndexOf('.', maxPartLength);
+            const lastQuestion = remainingContent.lastIndexOf('?', maxPartLength);
+            const lastExclamation = remainingContent.lastIndexOf('!', maxPartLength);
+            const lastNewLine = remainingContent.lastIndexOf('\n\n', maxPartLength);
+            
+            // Encontra o último ponto de quebra válido, priorizando pontuação com quebra de linha
+            const possibleBreaks = [
+              lastPeriodNewline, lastQuestionNewline, lastExclamationNewline,
+              lastNewLine, lastPeriod, lastQuestion, lastExclamation
+            ].filter(index => index > 0).sort((a, b) => b - a);
+            
+            if (possibleBreaks.length > 0) {
+              // Adiciona 1 ou 2 caracteres dependendo do tipo de quebra
+              const breakIndex = possibleBreaks[0];
+              if ([lastPeriodNewline, lastQuestionNewline, lastExclamationNewline].includes(breakIndex)) {
+                breakPoint = breakIndex + 2; // Inclui o caractere de pontuação e a quebra de linha
+              } else if (breakIndex === lastNewLine) {
+                breakPoint = breakIndex + 2; // Inclui as duas quebras de linha
+              } else {
+                breakPoint = breakIndex + 1; // Inclui apenas o caractere de pontuação
+              }
+            } else {
+              // Se não encontrou um ponto de quebra adequado, procura por um espaço
+              const lastSpace = remainingContent.lastIndexOf(' ', maxPartLength);
+              if (lastSpace > 0) {
+                breakPoint = lastSpace + 1;
+              }
             }
           }
         }
         
-        // Extrai a parte atual
+        // Extrai a parte atual sem adicionar numeração
         const currentPart = remainingContent.substring(0, breakPoint);
         
-        // Adiciona indicador de parte se houver mais de uma
-        let messageText = currentPart;
-        if (letterContent.length > maxPartLength) {
-          messageText = `${currentPart}\n\n(Parte ${partNumber}/${Math.ceil(letterContent.length / maxPartLength)})`;
-        }
-        
-        // Envia a parte atual
-        await whatsappService.sendTextMessage(userPhoneNumber, messageText);
+        // Envia a parte atual sem indicador de parte
+        await whatsappService.sendTextMessage(userPhoneNumber, currentPart);
         
         // Atualiza o conteúdo restante
         remainingContent = remainingContent.substring(breakPoint);
-        partNumber++;
         
-        // Pequeno delay entre as mensagens
+        // Pequeno delay entre as mensagens para garantir a ordem correta
         if (remainingContent.length > 0) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
       }
     }
@@ -594,7 +607,7 @@ async function processCommand(userPhoneNumber, command, session) {
       // Informações sobre IA
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "🤖 *O Poder da IA nos Negócios* 🤖\n\nA Inteligência Artificial está revolucionando a forma como os negócios operam e se conectam com seus clientes.\n\nNo programa MAPA DO LUCRO, Renato Hilel e Nuno Arcanjo mostram como usar a IA para:\n\n✅ Automatizar tarefas repetitivas\n✅ Personalizar a comunicação com clientes\n✅ Analisar dados e identificar oportunidades\n✅ Criar conteúdo de alta qualidade em menos tempo\n✅ Escalar operações sem aumentar proporcionalmente os custos\n\nPara saber mais, acesse: https://www.floreon.app.br/consciencia"
+        "🤖 *O Poder da IA nos Negócios* 🤖\n\nA Inteligência Artificial está revolucionando a forma como os negócios operam e se conectam com seus clientes.\n\nNo Programa Consciênc.IA, Renato Hilel e Nuno Arcanjo mostram como usar a IA para:\n\n✅ Automatizar tarefas repetitivas\n✅ Personalizar a comunicação com clientes\n✅ Analisar dados e identificar oportunidades\n✅ Criar conteúdo de alta qualidade em menos tempo\n✅ Escalar operações sem aumentar proporcionalmente os custos\n\nPara saber mais, acesse: https://www.floreon.app.br/conscienc-ia"
       );
       
       // Atualiza o estado da sessão
@@ -631,7 +644,8 @@ async function processCommand(userPhoneNumber, command, session) {
       // Encerra a conversa
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "🙏 Obrigado por usar o Conselheiro Consciênc.IA!\n\nFoi um prazer ajudar você nessa jornada de autoconhecimento e crescimento.\n\nSe quiser receber uma nova carta no futuro, basta enviar \"Quero receber a minha Carta!\".\n\nDesejo muito sucesso em sua jornada! ✨"
+        "✨ *Sua Carta da Consciênc.IA foi entregue!* ✨Espero que tenha gostado da sua Carta! 🌟 Para saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo. Visite: https://www.floreon.app.br/conscienc-ia. Aproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫”
+ ✨"
       );
       
       // Atualiza o estado da sessão
