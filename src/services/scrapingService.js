@@ -27,7 +27,7 @@ export async function scrapeProfile(profileUrl) {
       platform = 'instagram';
     }
     // Verifica se é uma URL do Instagram
-    else if (profileUrl.includes('instagram.com')) {
+    else if (profileUrl.includes('instagram.com' )) {
       platform = 'instagram';
     }
     // Verifica se é uma URL do LinkedIn
@@ -79,7 +79,7 @@ export async function analyzeProfileWithAI(profileUrl) {
   const OPENAI_API_URL = process.env.OPENAI_API_URL || "https://api.openai.com/v1/chat/completions";
   
   try {
-    const profileData = await scrapeProfile(profileUrl);
+    const profileData = await scrapeProfile(profileUrl );
     
     if (!profileData) {
       return '';
