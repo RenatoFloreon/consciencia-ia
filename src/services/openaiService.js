@@ -2,17 +2,9 @@ import axios from 'axios';
 import { log } from '../utils/logger.js';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4';  // e.g., 'gpt-4' or 'gpt-4-vision' if applicable
-const OPENAI_API_URL = process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4';  // Modelo GPT-4 padrão
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
-/**
- * Calls the OpenAI API (GPT-4 with Vision support) to generate the personalized letter.
- * @param {string} name - User's name.
- * @param {object} profileData - Profile data (name, bio, imageUrl, posts).
- * @param {string} profChallenge - User's professional challenge.
- * @param {string} persChallenge - User's personal challenge.
- * @returns {Promise<string>} - The generated letter content.
- */
 async function generateLetter(name, profileData, profChallenge, persChallenge) {
   // Construct the system prompt with instructions for the format and tone
   const systemMessage = {
@@ -26,8 +18,8 @@ Estruture a carta com as seções a seguir, usando exatamente os títulos e emoj
 ✨ PERFIL COMPORTAMENTAL (INSIGHT DE CONSCIÊNCIA) ✨ – Nesta seção, analise o comportamento e perfil digital do usuário (interesses, estilo, padrão de posts), conectando com o conceito de Ikigai quando possível.  
 🚀 DICAS PRÁTICAS DE USO DE IA NOS NEGÓCIOS 🚀 – Liste 3 dicas numeradas (1️⃣, 2️⃣, 3️⃣) de como a IA pode ajudar nos desafios do negócio que o usuário mencionou, sendo bem específicas e citando ferramentas ou exemplos práticos.  
 💫 DICAS PRÁTICAS DE USO DE IA NA SUA VIDA PESSOAL 💫 – Liste 3 dicas numeradas de como a IA pode ajudar nos desafios pessoais do usuário, também específicas e práticas para a vida diária.  
-🧭 RECOMENDAÇÕES DE OURO 🧭 – Recomendações finais integrando o conceito de Ikigai e o Método S.I.M. aos contextos do usuário. Mencione os perfis @metodosimbrasil e @coworkingikigai (Instagram) como recursos para ele conhecer mais sobre o Método S.I.M. e Ikigai.  
-💫 PÍLULA DE INSPIRAÇÃO (POESIA INDIVIDUALIZADA) 💫 – Uma breve poesia original que inclua o nome do usuário (ou o significado do nome) e elementos temáticos relacionados ao perfil dele, encerrando a carta de forma motivacional e poética.
+🧭 CONSELHO DE OURO 🧭 – Recomendações finais integrando o conceito de Ikigai e o Método S.I.M. aos contextos do usuário. Mencione os perfis @metodosimbrasil e @coworkingikigai (Instagram) como recursos para ele conhecer mais sobre o Método S.I.M. e Ikigai.  
+💫 POESIA CANALIZADA 💫 – Uma breve poesia original que inclua o nome do usuário (ou o significado do nome) e elementos temáticos relacionados ao perfil dele, encerrando a carta de forma motivacional e poética.
 
 Certifique-se de que a carta seja **100% personalizada** – use detalhes do perfil (bio, interesses, postagens) e aborde diretamente os desafios informados pelo usuário, oferecendo soluções e insights únicos.`
   };
@@ -84,4 +76,39 @@ Desafio pessoal: ${persChallenge}${postsInfo}`;
   }
 }
 
-export default { generateLetter };
+/**
+ * Generate a follow-up answer suggesting how AI can help with a given challenge.
+ * @param {string} challenge - The single challenge description provided by the user.
+ * @returns {Promise<string>} - A response message with AI suggestions.
+ */
+async function generateFollowupAnswer(challenge) {
+  const systemMessage = {
+    role: 'system',
+    content: 'Você é um assistente virtual especializado em oferecer sugestões práticas de como a Inteligência Artificial pode ajudar a resolver desafios fornecidos pelo usuário. Responda em um tom encorajador, motivacional e conciso, em Português do Brasil.'
+  };
+  const userMessage = {
+    role: 'user',
+    content: `Desafio: ${challenge}\n\nComo a Inteligência Artificial pode ajudar a resolver esse desafio?`
+  };
+  const requestBody = {
+    model: OPENAI_MODEL,
+    messages: [systemMessage, userMessage],
+    temperature: 0.7,
+    max_tokens: 500
+  };
+  try {
+    const apiResponse = await axios.post(OPENAI_API_URL, requestBody, {
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    const answer = apiResponse.data.choices?.[0]?.message?.content;
+    return answer?.trim() || '';
+  } catch (err) {
+    log('OpenAI API error (followup):', err.response?.data || err.message);
+    return '';
+  }
+}
+
+export default { generateLetter, generateFollowupAnswer };
