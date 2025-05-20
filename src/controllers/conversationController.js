@@ -1,8 +1,8 @@
 import sessionService from '../services/sessionService.js';
 import whatsappService from '../services/whatsappService.js';
-import openaiService from '../services/openaiService.js';
-import profileScraperService from '../services/profileScraperService.js';
-import visionAnalysisService from '../services/visionAnalysisService.js';
+import * as openaiService from '../services/openaiService.js';
+import * as profileScraperService from '../services/profileScraperService.js';
+import * as visionAnalysisService from '../services/visionAnalysisService.js';
 import * as contentGenerationService from '../services/contentGenerationService.js';
 import { log } from '../utils/logger.js';
 
@@ -154,7 +154,7 @@ async function handleImageMessage(phoneNumber, image) {
       }
       
       // Analisa a imagem com o serviço de visão
-      const imageAnalysis = await visionAnalysisService.analyzeImage(mediaUrl);
+      const imageAnalysis = await visionAnalysisService.analyzeImageFromUrl(mediaUrl);
       
       session.profileImageAnalysis = imageAnalysis;
       session.state = 'WAITING_CHALLENGE';
