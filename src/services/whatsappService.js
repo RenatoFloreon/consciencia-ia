@@ -6,6 +6,7 @@ const WHATSAPP_API_VERSION = 'v22.0'; // Atualizado para a versão v22.0 que fun
 const MAX_RETRIES = 3;
 const INITIAL_TIMEOUT = 30000; // 30 segundos
 const RETRY_DELAY = 2000; // 2 segundos
+const MAX_MESSAGE_LENGTH = 1000; // Limite de caracteres para mensagens do WhatsApp
 
 /**
  * Obtém o valor de uma variável de ambiente de forma robusta
@@ -67,95 +68,237 @@ const whatsappClient = axios.create({
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
+ * Divide uma mensagem longa em partes menores
+ * @param {string} text - Texto da mensagem
+ * @returns {Array<string>} - Array de partes da mensagem
+ */
+function splitLongMessage(text) {
+  if (!text || text.length <= MAX_MESSAGE_LENGTH) {
+    return [text];
+  }
+  
+  const parts = [];
+  let remainingText = text;
+  
+  while (remainingText.length > 0) {
+    // Encontra um ponto final, interrogação ou exclamação próximo ao limite
+    let splitIndex = MAX_MESSAGE_LENGTH;
+    
+    // Procura por um ponto final, interrogação ou exclamação antes do limite
+    const lastPeriod = remainingText.lastIndexOf('.', MAX_MESSAGE_LENGTH);
+    const lastQuestion = remainingText.lastIndexOf('?', MAX_MESSAGE_LENGTH);
+    const lastExclamation = remainingText.lastIndexOf('!', MAX_MESSAGE_LENGTH);
+    const lastNewLine = remainingText.lastIndexOf('\n', MAX_MESSAGE_LENGTH);
+    
+    // Encontra o último ponto de quebra válido
+    const possibleBreaks = [lastPeriod, lastQuestion, lastExclamation, lastNewLine]
+      .filter(index => index > 0)
+      .sort((a, b) => b - a);
+    
+    if (possibleBreaks.length > 0) {
+      splitIndex = possibleBreaks[0] + 1; // Inclui o caractere de pontuação
+    }
+    
+    // Se não encontrou um ponto de quebra adequado, divide no limite
+    if (splitIndex <= 0 || splitIndex > MAX_MESSAGE_LENGTH) {
+      splitIndex = MAX_MESSAGE_LENGTH;
+      
+      // Tenta não cortar palavras
+      const lastSpace = remainingText.lastIndexOf(' ', splitIndex);
+      if (lastSpace > splitIndex * 0.8) { // Se o último espaço estiver a pelo menos 80% do caminho
+        splitIndex = lastSpace + 1;
+      }
+    }
+    
+    // Adiciona a parte atual
+    parts.push(remainingText.substring(0, splitIndex).trim());
+    
+    // Atualiza o texto restante
+    remainingText = remainingText.substring(splitIndex).trim();
+  }
+  
+  return parts;
+}
+
+/**
  * Envia uma mensagem de texto para um número de telefone via WhatsApp
  * Implementa retry com backoff exponencial
  * @param {string} to - Número de telefone de destino
  * @param {string} text - Texto da mensagem
- * @returns {boolean} - Sucesso ou falha no envio
+ * @returns {Promise<boolean>} - Sucesso ou falha no envio
  */
 export async function sendTextMessage(to, text) {
-  log(`Enviando mensagem para ${to}: ${text.substring(0, 50)}...`);
-  
-  // Verifica se as variáveis essenciais estão definidas
-  if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_ID) {
-    log('ERRO: Variáveis de ambiente WHATSAPP_TOKEN ou WHATSAPP_PHONE_ID não definidas');
-    return false;
-  }
-  
-  // Payload exatamente igual ao formato do curl que funcionou
-  const payload = {
-    messaging_product: 'whatsapp',
-    to: to,
-    type: 'text',
-    text: { 
-      body: text 
+  try {
+    if (!to || !text) {
+      log('ERRO: Número de telefone e texto são obrigatórios');
+      return false;
     }
-  };
-  
-  log(`Payload: ${JSON.stringify(payload)}`);
-  
-  // Implementa retry com backoff exponencial
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      log(`Tentativa ${attempt} de enviar mensagem para ${to}`);
+    
+    log(`Enviando mensagem para ${to}: ${text.substring(0, 50)}...`);
+    
+    // Verifica se as variáveis essenciais estão definidas
+    if (!WHATSAPP_TOKEN || !WHATSAPP_PHONE_ID) {
+      log('ERRO: Variáveis de ambiente WHATSAPP_TOKEN ou WHATSAPP_PHONE_ID não definidas');
+      return false;
+    }
+    
+    // Divide mensagens longas
+    const messageParts = splitLongMessage(text);
+    let finalSuccess = true;
+    
+    // Envia cada parte da mensagem
+    for (const part of messageParts) {
+      // Payload exatamente igual ao formato do curl que funcionou
+      const payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: to,
+        type: 'text',
+        text: { 
+          preview_url: true,
+          body: part 
+        }
+      };
       
-      // Aumenta o timeout a cada tentativa
-      const timeout = INITIAL_TIMEOUT * attempt;
+      log(`Payload: ${JSON.stringify(payload)}`);
       
-      // Usando o formato exato da URL que funcionou no curl
-      const url = `${WHATSAPP_PHONE_ID}/messages`;
-      log(`URL: https://graph.facebook.com/${WHATSAPP_API_VERSION}/${url}`);
-      
-      const response = await whatsappClient({
-        method: 'post',
-        url: url,
-        data: payload,
-        timeout: timeout
-      });
-      
-      log(`Mensagem enviada com sucesso para ${to}. Status: ${response.status}`);
-      log(`Resposta: ${JSON.stringify(response.data)}`);
-      return true;
-    } catch (error) {
-      const errorMessage = error.response?.data?.error?.message || error.message || 'Erro desconhecido';
-      const errorCode = error.response?.data?.error?.code || 'N/A';
-      const statusCode = error.response?.status || 'N/A';
-      
-      log(`Erro na tentativa ${attempt} ao enviar mensagem: ${errorMessage} (Código: ${errorCode}, Status: ${statusCode})`);
-      
-      // Se for a última tentativa, retorna falha
-      if (attempt === MAX_RETRIES) {
-        log(`Erro detalhado ao enviar mensagem: ${error}`);
-        log('Resultado do envio de mensagem: Falha');
-        return false;
+      // Implementa retry com backoff exponencial
+      let success = false;
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          log(`Tentativa ${attempt} de enviar mensagem para ${to}`);
+          
+          // Aumenta o timeout a cada tentativa
+          const timeout = INITIAL_TIMEOUT * attempt;
+          
+          // Usando o formato exato da URL que funcionou no curl
+          const url = `${WHATSAPP_PHONE_ID}/messages`;
+          log(`URL: https://graph.facebook.com/${WHATSAPP_API_VERSION}/${url}`);
+          
+          const response = await whatsappClient({
+            method: 'post',
+            url: url,
+            data: payload,
+            timeout: timeout
+          });
+          
+          log(`Mensagem enviada com sucesso para ${to}. Status: ${response.status}`);
+          log(`Resposta: ${JSON.stringify(response.data)}`);
+          success = true;
+          break;
+        } catch (error) {
+          const errorMessage = error.response?.data?.error?.message || error.message || 'Erro desconhecido';
+          const errorCode = error.response?.data?.error?.code || 'N/A';
+          const statusCode = error.response?.status || 'N/A';
+          
+          log(`Erro na tentativa ${attempt} ao enviar mensagem: ${errorMessage} (Código: ${errorCode}, Status: ${statusCode})`);
+          
+          // Se for a última tentativa, registra falha
+          if (attempt === MAX_RETRIES) {
+            log(`Erro detalhado ao enviar mensagem: ${error}`);
+            log('Resultado do envio de mensagem: Falha');
+            finalSuccess = false;
+          } else {
+            // Calcula o delay com backoff exponencial
+            const delay = RETRY_DELAY * Math.pow(2, attempt - 1);
+            log(`Aguardando ${delay}ms antes da próxima tentativa...`);
+            await sleep(delay);
+          }
+        }
       }
       
-      // Calcula o delay com backoff exponencial
-      const delay = RETRY_DELAY * Math.pow(2, attempt - 1);
-      log(`Aguardando ${delay}ms antes da próxima tentativa...`);
-      await sleep(delay);
+      // Adiciona um pequeno atraso entre mensagens para evitar problemas de ordem
+      if (messageParts.length > 1 && messageParts.indexOf(part) < messageParts.length - 1) {
+        await sleep(500);
+      }
     }
+    
+    return finalSuccess;
+  } catch (error) {
+    log(`Erro geral ao enviar mensagem: ${error.message}`);
+    return false;
   }
-  
-  return false;
 }
 
 /**
- * Verifica o token do webhook do WhatsApp
- * @param {string} mode - Modo de verificação
- * @param {string} token - Token a ser verificado
- * @returns {boolean} - Resultado da verificação
+ * Envia uma mensagem com template via WhatsApp
+ * @param {string} to - Número de telefone do destinatário
+ * @param {string} templateName - Nome do template
+ * @param {string} language - Código do idioma (ex: pt_BR)
+ * @param {Array} components - Componentes do template
+ * @returns {Promise<Object|null>} - Resposta da API ou null em caso de erro
  */
-export function verifyWebhook(mode, token) {
-  log(`Verificando webhook: mode=${mode}, token=${token}`);
-  
-  if (mode === 'subscribe' && token === WHATSAPP_VERIFY_TOKEN) {
-    log('Webhook verificado com sucesso');
-    return true;
+async function sendTemplateMessage(to, templateName, language = 'pt_BR', components = []) {
+  try {
+    if (!to || !templateName) {
+      log('ERRO: Número de telefone e nome do template são obrigatórios');
+      return null;
+    }
+
+    // Payload para mensagem de template
+    const payload = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: to,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: {
+          code: language
+        }
+      }
+    };
+    
+    // Adiciona componentes se fornecidos
+    if (components && components.length > 0) {
+      payload.template.components = components;
+    }
+    
+    // Implementa retry com backoff exponencial
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        log(`Tentativa ${attempt} de enviar template ${templateName} para ${to}`);
+        
+        // Aumenta o timeout a cada tentativa
+        const timeout = INITIAL_TIMEOUT * attempt;
+        
+        // Usando o formato exato da URL que funcionou no curl
+        const url = `${WHATSAPP_PHONE_ID}/messages`;
+        
+        const response = await whatsappClient({
+          method: 'post',
+          url: url,
+          data: payload,
+          timeout: timeout
+        });
+        
+        log(`Template enviado com sucesso para ${to}. Status: ${response.status}`);
+        return response.data;
+      } catch (error) {
+        const errorMessage = error.response?.data?.error?.message || error.message || 'Erro desconhecido';
+        const errorCode = error.response?.data?.error?.code || 'N/A';
+        const statusCode = error.response?.status || 'N/A';
+        
+        log(`Erro na tentativa ${attempt} ao enviar template: ${errorMessage} (Código: ${errorCode}, Status: ${statusCode})`);
+        
+        // Se for a última tentativa, retorna null
+        if (attempt === MAX_RETRIES) {
+          log(`Erro detalhado ao enviar template: ${error}`);
+          return null;
+        }
+        
+        // Calcula o delay com backoff exponencial
+        const delay = RETRY_DELAY * Math.pow(2, attempt - 1);
+        log(`Aguardando ${delay}ms antes da próxima tentativa...`);
+        await sleep(delay);
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    log(`Erro geral ao enviar template: ${error.message}`);
+    return null;
   }
-  
-  log('Falha na verificação do webhook');
-  return false;
 }
 
 /**
@@ -219,10 +362,66 @@ export async function downloadMedia(mediaUrl) {
   }
 }
 
+/**
+ * Marca uma mensagem como lida
+ * @param {string} messageId - ID da mensagem
+ * @returns {Promise<boolean>} - Sucesso ou falha na operação
+ */
+export async function markMessageAsRead(messageId) {
+  try {
+    if (!messageId) {
+      log('ERRO: ID da mensagem é obrigatório');
+      return false;
+    }
+
+    log(`Marcando mensagem ${messageId} como lida`);
+    
+    const payload = {
+      messaging_product: 'whatsapp',
+      status: 'read',
+      message_id: messageId
+    };
+    
+    const url = `${WHATSAPP_PHONE_ID}/messages`;
+    
+    const response = await whatsappClient({
+      method: 'post',
+      url: url,
+      data: payload
+    });
+    
+    log(`Mensagem marcada como lida com sucesso. Status: ${response.status}`);
+    return true;
+  } catch (error) {
+    log(`Erro ao marcar mensagem como lida: ${error.message}`);
+    return false;
+  }
+}
+
+/**
+ * Verifica o token do webhook do WhatsApp
+ * @param {string} mode - Modo de verificação
+ * @param {string} token - Token a ser verificado
+ * @returns {boolean} - Resultado da verificação
+ */
+export function verifyWebhook(mode, token) {
+  log(`Verificando webhook: mode=${mode}, token=${token}`);
+  
+  if (mode === 'subscribe' && token === WHATSAPP_VERIFY_TOKEN) {
+    log('Webhook verificado com sucesso');
+    return true;
+  }
+  
+  log('Falha na verificação do webhook');
+  return false;
+}
+
 // Exporta as funções
 export default {
   sendTextMessage,
-  verifyWebhook,
+  sendTemplateMessage,
   getMediaUrl,
-  downloadMedia
+  downloadMedia,
+  markMessageAsRead,
+  verifyWebhook
 };
