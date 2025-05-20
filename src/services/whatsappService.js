@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { log } from '../utils/logger.js';
 
-const WA_PHONE_ID = process.env.WHATSAPP_PHONE_ID;   // Your WhatsApp Phone Number ID (from Meta)
-const WA_TOKEN = process.env.WHATSAPP_TOKEN;         // Your WhatsApp API Bearer token
+const WA_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
+const WA_TOKEN = process.env.WHATSAPP_TOKEN;
 
 /**
  * Sends a text message to a WhatsApp user via the WhatsApp Cloud API.
@@ -27,58 +27,45 @@ async function sendText(to, text) {
     });
   } catch (err) {
     log('WhatsApp API sendText error:', err.response?.data || err.message);
-    // We choose to throw so the caller can handle errors if needed
-    throw err;
   }
 }
 
 /**
- * Splits a long text message into an array of smaller messages, each not exceeding maxLength characters.
- * Tries to split at paragraph boundaries if possible.
- * @param {string} message - The full text message to split.
- * @param {number} maxLength - Maximum allowed length of each message chunk.
- * @returns {string[]} - Array of message parts.
+ * Splits a long message into smaller chunks (WhatsApp limit ~1600 chars per message).
+ * @param {string} message - The message text to split.
+ * @param {number} maxLength - Maximum length per chunk.
+ * @returns {string[]} Array of message parts.
  */
 function splitMessage(message, maxLength) {
-  if (!message || message.length <= maxLength) {
-    return [ message ];
-  }
   const parts = [];
-  const paragraphs = message.split(/\n\s*\n/);  // split on blank lines (paragraph breaks)
-  let currentPart = '';
-  for (const para of paragraphs) {
-    if (currentPart.length + para.length + 2 < maxLength) {
-      // +2 for the two newlines we'll add if concatenating paragraphs
-      currentPart += (currentPart ? '\n\n' : '') + para;
-    } else {
-      if (currentPart) {
-        parts.push(currentPart);
-        currentPart = '';
-      }
-      if (para.length <= maxLength) {
-        // Start a new part with this paragraph
-        currentPart = para;
-      } else {
-        // If a single paragraph is still too long, split it by sentences or chunks
-        let chunk = '';
-        const words = para.split(' ');
-        for (const word of words) {
-          if (chunk.length + word.length + 1 < maxLength) {
-            chunk += (chunk ? ' ' : '') + word;
-          } else {
-            parts.push(chunk);
-            chunk = word;
-          }
-        }
-        if (chunk) parts.push(chunk);
-        currentPart = '';
-      }
-    }
+  let str = message;
+  while (str.length > maxLength) {
+    parts.push(str.slice(0, maxLength));
+    str = str.slice(maxLength);
   }
-  if (currentPart) {
-    parts.push(currentPart);
-  }
+  parts.push(str);
   return parts;
 }
 
-export default { sendText, splitMessage };
+/**
+ * Fetches the direct URL of a media file (image) from WhatsApp API using the media ID.
+ * @param {string} mediaId - The ID of the media to fetch.
+ * @returns {Promise<{ url: string, mimeType: string }|null>} Object with URL and MIME type, or null on failure.
+ */
+async function fetchMediaUrl(mediaId) {
+  try {
+    const mediaRes = await axios.get(`https://graph.facebook.com/v17.0/${mediaId}`, {
+      params: { access_token: WA_TOKEN }
+    });
+    const mediaData = mediaRes.data;
+    if (mediaData.url) {
+      return { url: mediaData.url, mimeType: mediaData.mime_type || null };
+    }
+    return null;
+  } catch (err) {
+    log('WhatsApp API fetchMediaUrl error:', err.response?.data || err.message);
+    return null;
+  }
+}
+
+export default { sendText, splitMessage, fetchMediaUrl };
