@@ -57,7 +57,7 @@ export async function classifyImageType(imageUrl) {
       max_tokens: 50
     };
     
-    const response = await axios.post(OPENAI_API_URL, body, { headers });
+    const response = await axios.post(OPENAI_API_URL, body, { headers } );
     const result = response.data.choices[0].message.content.toLowerCase();
     
     if (result.includes('screenshot') || result.includes('print')) {
@@ -109,7 +109,7 @@ export async function analyzeImageFromUrl(imageUrl) {
       max_tokens: 500
     };
     
-    const response = await axios.post(OPENAI_API_URL, body, { headers });
+    const response = await axios.post(OPENAI_API_URL, body, { headers } );
     return response.data.choices[0].message.content;
   } catch (err) {
     log('Erro na análise de imagem a partir de URL:', err);
