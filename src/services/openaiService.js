@@ -11,7 +11,7 @@ const OPENAI_MODEL = 'gpt-4o'; // Modelo mais recente e capaz
  * @param {Object} userData - Dados do usuário para personalização
  * @returns {Promise<string>} - Texto da carta gerada
  */
-export async function generateConscienceLetter(userData) {
+export async function generateConscienceLetter(userData ) {
   try {
     const { name, challenge, profileUrl, profileData, imageAnalysis, inputType } = userData;
     
