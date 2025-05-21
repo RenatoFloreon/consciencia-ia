@@ -581,7 +581,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Primeira parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✨ Sua Carta da Consciênc.IA foi entregue! ✨\n\nEspero que tenha gostado da experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\n""
+      "✨ Sua Carta da Consciênc.IA foi entregue! ✨\n\nEspero que tenha gostado da experiência! 🌟"
     );
     
     // Pequeno delay entre as mensagens
@@ -590,7 +590,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Segunda parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "🌸 Antes de irmos, uma última sugestão:\n\nExplore o Método S.I.M. (@metodosimbrasil) e o perfil do Ikigai (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar Saúde, Intuição e Mente,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o App Oficial da comunidade MAPA DO LUCRO, recomendo que peça agora mesmo o link para a equipe do evento."
+      "Para saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫"
     );
     
     // Pequeno delay entre as mensagens
@@ -599,7 +599,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Terceira parte do follow-up com o Método SIM
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Aproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa @renatohilel.oficial e @nunoarcanjo.poeta!💫"
+      "🌸 Antes de irmos, uma última sugestão:\n\nExplore o Método S.I.M. (@metodosimbrasil) e o perfil do IKIGAI (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar Saúde, Intuição e Mente,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o App Oficial do MAPA DO LUCRO, recomendo que peça agora mesmo o link para a equipe do evento."
     );
     
   } catch (error) {
@@ -645,17 +645,17 @@ async function processCommand(userPhoneNumber, command, session) {
       // Encerra a conversa
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "🙏 Foi um prazer compartilhar esse momento de reflexão com você!\n\nSua jornada continua!\n\nQue sua luz continue a brilhar! ✨"
+        "🙏 Foi um prazer compartilhar esse momento de reflexão com você!\n\nQue sua luz continue a brilhar! ✨"
       );
       
       // Atualiza o estado da sessão
       session.state = CONVERSATION_STATES.INITIAL;
       await sessionService.saveSession(userPhoneNumber, session);
     } else {
-      // Qualquer outro comando, encerrar
+      // Qualquer outro comando, sugere receber uma nova carta
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "🙏 Foi um prazer compartilhar esse momento de reflexão com você!\n\nSua jornada continua!\n\nQue sua luz continue a brilhar! ✨"
+        "Gartidão por ter compartilhado este momento de reflexão comigo.\n\nQue sua luz continue a brilhar! ✨"
       );
     }
   } catch (error) {
