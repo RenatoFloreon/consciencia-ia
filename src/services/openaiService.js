@@ -113,23 +113,9 @@ E, se em algum momento esquecer... volte para esta Carta. Ela será seu lembrete
 
 ---
 
-🌸 Antes de irmos, uma última sugestão:  
-Explore o Método S.I.M. (@metodosimbrasil) e o perfil do IKIGAI (@coworkingikigai).
+✨ Que a luz da sua Consciência continue a Brilhar ✨
 
-O Método S.I.M. te ajuda a equilibrar Saúde, Intuição e Mente,  
-enquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.
-
-🌐 Se ainda não baixou o App Oficial do MAPA DO LUCRO, recomendo que peça agora mesmo o link para a equipe do evento.  
-
-✨ Sua Carta da Consciênc.IA foi entregue! ✨
-
-Espero que tenha gostado da experiência! 🌟
-
-Para saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.
-
-Visite: https://www.floreon.app.br/conscienc-ia
-
-Aproveite o evento MAPA DO LUCRO do Coworking IKIGAI e não deixe de conversar pessoalmente com os criadores do programa! 💫
+Com reverência, seu Conselheiro Consicênc.IA 🌟
 
 Diretrizes essenciais:
 
