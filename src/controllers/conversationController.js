@@ -581,7 +581,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Primeira parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✨ Sua Carta da Consciênc.IA foi entregue! ✨\n\nEspero que tenha gostado da experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫""
+      "✨ Sua Carta da Consciênc.IA foi entregue! ✨\n\nEspero que tenha gostado da experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\n""
     );
     
     // Pequeno delay entre as mensagens
@@ -599,7 +599,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Terceira parte do follow-up com o Método SIM
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Que a luz da sua Consciência continue sempre a brilhar.💫"
+      "Aproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa!💫"
     );
     
   } catch (error) {
@@ -645,17 +645,17 @@ async function processCommand(userPhoneNumber, command, session) {
       // Encerra a conversa
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "🙏 Foi um prazer compartilhar esse momento de reflexão com você!\n\nSua jornada continua, e quando sentir que é hora de uma nova perspectiva, estarei aqui.\n\nBasta enviar \"Quero receber a minha Carta!\" para nos reconectarmos.\n\nQue sua luz continue a brilhar! ✨"
+        "🙏 Foi um prazer compartilhar esse momento de reflexão com você!\n\nSua jornada continua!\n\nQue sua luz continue a brilhar! ✨"
       );
       
       // Atualiza o estado da sessão
       session.state = CONVERSATION_STATES.INITIAL;
       await sessionService.saveSession(userPhoneNumber, session);
     } else {
-      // Qualquer outro comando, sugere receber uma nova carta
+      // Qualquer outro comando, encerrar
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "Quando sentir que é hora de uma nova perspectiva, estarei aqui. Basta enviar \"Quero receber a minha Carta!\" para nos reconectarmos.\n\nQue sua luz continue a brilhar! ✨"
+        "🙏 Foi um prazer compartilhar esse momento de reflexão com você!\n\nSua jornada continua!\n\nQue sua luz continue a brilhar! ✨"
       );
     }
   } catch (error) {
