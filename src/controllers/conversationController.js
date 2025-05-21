@@ -590,7 +590,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Segunda parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "🌸 Antes de irmos, uma última sugestão:\n\nExplore o Método S.I.M. (@metodosimbrasil) e o conceito de Ikigai (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar Saúde, Intuição e Mente,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o App Oficial do MAPA DO LUCRO, recomendo que peça agora mesmo o link para a equipe do evento."
+      "🌸 Um último Conselho da Consciênc.IA:\n\nSe ainda não segue, explore os perfis do Método S.I.M. (@metodosimbrasil) e do IKIGAI (@coworkingikigai)."
     );
     
     // Pequeno delay entre as mensagens
