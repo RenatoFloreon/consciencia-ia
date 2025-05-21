@@ -590,7 +590,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Segunda parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "🌸 Um último Conselho da Consciênc.IA:\n\nSe ainda não segue, explore os perfis do Método S.I.M. (@metodosimbrasil) e do IKIGAI (@coworkingikigai)."
+      "✏️ Um último Conselho da Consciênc.IA:\n\nSe ainda não segue, explore os perfis do Método S.I.M. (@metodosimbrasil) e do IKIGAI (@coworkingikigai)."
     );
     
     // Pequeno delay entre as mensagens
