@@ -590,11 +590,17 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Segunda parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "🌸 Antes de irmos, uma última sugestão:\n\nExplore o Método S.I.M. (@metodosimbrasil) e o perfil do Ikigai (@coworkingikigai) no instagram.\n\nO Método S.I.M. te ajuda a equilibrar Saúde, Intuição e Mente,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o App Oficial do MAPA DO LUCRO, recomendo que peça agora mesmo o link para a equipe do evento."
+      "🌸 Antes de irmos, uma última sugestão:\n\nExplore o Método S.I.M. (@metodosimbrasil) e o perfil do Ikigai (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar Saúde, Intuição e Mente,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o App Oficial do MAPA DO LUCRO, recomendo que peça agora mesmo o link para a equipe do evento."
     );
     
     // Pequeno delay entre as mensagens
     await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Terceira parte do follow-up com o Método SIM
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      "Que a luz da sua Consciência continue brilhando! ✨"
+    );
     
   } catch (error) {
     log('Erro ao processar desafio:', error);
@@ -639,7 +645,7 @@ async function processCommand(userPhoneNumber, command, session) {
       // Encerra a conversa
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "🙏 Foi um prazer compartilhar esse momento de reflexão com você!\n\nQue sua luz continue a brilhar! ✨"
+        "🙏 Foi um prazer compartilhar esse momento de reflexão com você!\n\nSua jornada continua, e quando sentir que é hora de uma nova perspectiva, estarei aqui.\n\nBasta enviar \"Quero receber a minha Carta!\" para nos reconectarmos.\n\nQue sua luz continue a brilhar! ✨"
       );
       
       // Atualiza o estado da sessão
@@ -649,7 +655,7 @@ async function processCommand(userPhoneNumber, command, session) {
       // Qualquer outro comando, sugere receber uma nova carta
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "A experiência exclusiva do Programa Consciênc.IA para o MAPA DO LUCRO foi concluída com sucesso.\n\nQue sua luz continue a brilhar! ✨"
+        "Quando sentir que é hora de uma nova perspectiva, estarei aqui. Basta enviar \"Quero receber a minha Carta!\" para nos reconectarmos.\n\nQue sua luz continue a brilhar! ✨"
       );
     }
   } catch (error) {
