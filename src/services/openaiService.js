@@ -114,7 +114,7 @@ E, se em algum momento esquecer... volte para esta Carta. Ela será seu lembrete
 ---
 
 🌸 Antes de irmos, uma última sugestão:  
-Explore o Método S.I.M. (@metodosimbrasil) e o conceito de Ikigai (@coworkingikigai).
+Explore o Método S.I.M. (@metodosimbrasil) e o perfil do IKIGAI (@coworkingikigai).
 
 O Método S.I.M. te ajuda a equilibrar Saúde, Intuição e Mente,  
 enquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.
