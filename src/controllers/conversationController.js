@@ -318,7 +318,7 @@ async function processName(userPhoneNumber, name, session) {
     // Solicita o negócio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar qual é o Nicho do seu Negócio ou trabalho atual e o seu papel nele?`
+      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar qual é o seu Negócio ou trabalho atual e o seu papel nele?`
     );
   } catch (error) {
     log('Erro ao processar nome:', error);
@@ -353,7 +353,7 @@ async function processBusiness(userPhoneNumber, business, session) {
     // Solicita o perfil
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Perfeito! Agora, para gerar sua Carta da Consciênc.IA personalizada, preciso analisar seu perfil digital.\n\nVocê pode enviar uma imagem do seu perfil social, uma foto que te represente hoje, ou simplesmente me dizer seu @ (como @renatohilel.oficial).\n\nEscolha a forma que preferir e compartilhe comigo."
+      "Perfeito! Agora, para gerar sua Carta da Consciênc.IA personalizada, preciso analisar seu perfil digital.\n\nVocê pode enviar uma foto sua, um print do seu perfil (instagram ou linkedin) ou simplesmente me dizer seu @ (como @renatohilel.oficial).\n\nEscolha a forma que preferir e compartilhe comigo."
     );
   } catch (error) {
     log('Erro ao processar negócio:', error);
@@ -591,6 +591,15 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     await whatsappService.sendTextMessage(
       userPhoneNumber,
       "Para saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫"
+    );
+    
+    // Pequeno delay entre as mensagens
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Terceira parte do follow-up com o Método SIM
+    await whatsappService.sendTextMessage(
+      userPhoneNumber,
+      "🌸 Antes de irmos, uma última sugestão:\n\nExplore o Método S.I.M. (@metodosimbrasil) e o conceito de Ikigai (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar Saúde, Intuição e Mente,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o App Oficial do MAPA DO LUCRO, recomendo que peça agora mesmo o link para a equipe do evento."
     );
     
   } catch (error) {
