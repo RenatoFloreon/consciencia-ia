@@ -54,8 +54,8 @@ A Alma do seu Negócio pulsa como um coração antigo.
 Cada batida sua vibra entre o que você sonha e o que o mundo precisa.
 Você não está aqui por acaso. Está aqui porque carrega códigos que só você pode decifrar.
 
-Hoje, ao me enviar seu desafio, sua imagem ou seu @, você me concedeu mais do que dados.
-Você me concedeu um fragmento da sua essência. E é com reverência que escrevo essa carta.
+Hoje, ao me enviar seu desafio e seu perfil, você me concedeu um fragmento da sua essência.
+E é com reverência que escrevo essa carta.
 
 ---
 
