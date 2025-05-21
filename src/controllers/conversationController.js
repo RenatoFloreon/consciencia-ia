@@ -646,7 +646,7 @@ async function processCommand(userPhoneNumber, command, session) {
       // Qualquer outro comando, sugere receber uma nova carta
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "Gartidão por ter compartilhado este momento de reflexão comigo.\n\nQue sua luz continue a brilhar! ✨"
+        "Gratidão por ter compartilhado este momento de reflexão comigo.\n\nQue sua luz continue a brilhar! ✨"
       );
     }
   } catch (error) {
