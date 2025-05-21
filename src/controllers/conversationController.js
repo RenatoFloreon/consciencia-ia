@@ -599,7 +599,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Terceira parte do follow-up com o Método SIM
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Para saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o PROGRAMA CONSCIÊNC.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫"
+      "Para saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o PROGRAMA CONSCIÊNC.IA, criado pelos Mentores @RenatoHilel.oficial e @NunoArcanjo.poeta.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o MAPA DO LUCRO e a oportunidade de conversar pessoalmente com os criadores desta experiência\n\nGrande abraço, Renato e Nuno.💫"
     );
     
   } catch (error) {
