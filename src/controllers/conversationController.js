@@ -581,7 +581,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Primeira parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✨ Sua Carta da Consciênc.IA foi entregue! ✨\n\nEspero que tenha gostado da experiência! 🌟"
+      "💌 Sua Carta da Consciênc.IA foi entregue! \n\nEspero que tenha gostado da experiência! 🦾😉"
     );
     
     // Pequeno delay entre as mensagens
