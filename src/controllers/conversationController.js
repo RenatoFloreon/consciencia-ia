@@ -645,7 +645,7 @@ async function processCommand(userPhoneNumber, command, session) {
       // Encerra a conversa
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "🙏 Foi um prazer compartilhar esse momento de reflexão com você!\n\nSua jornada continua, e quando sentir que é hora de uma nova perspectiva, estarei aqui.\n\nBasta enviar \"Quero receber a minha Carta!\" para nos reconectarmos.\n\nQue sua luz continue a brilhar! ✨"
+        "🙏 Foi um prazer compartilhar esse momento de reflexão com você!\n\nQue sua luz continue a brilhar! ✨"
       );
       
       // Atualiza o estado da sessão
@@ -655,7 +655,7 @@ async function processCommand(userPhoneNumber, command, session) {
       // Qualquer outro comando, sugere receber uma nova carta
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "Quando sentir que é hora de uma nova perspectiva, estarei aqui. Basta enviar \"Quero receber a minha Carta!\" para nos reconectarmos.\n\nQue sua luz continue a brilhar! ✨"
+        "A experiência exclusiva do Programa Consciênc.IA para o MAPA DO LUCRO foi concluída com sucesso.\n\nQue sua luz continue a brilhar! ✨"
       );
     }
   } catch (error) {
