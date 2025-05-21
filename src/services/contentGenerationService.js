@@ -32,7 +32,11 @@ export async function generateIAHelp(name, challenge) {
     log('Erro ao gerar sugestão de IA:', error);
     
     // Fallback em caso de erro
-    return `${name || 'Empreendedor'}, a IA pode ser uma aliada poderosa para superar desafios como "${challenge || 'crescimento nos negócios'}". Considere usar assistentes virtuais para automação, análise de dados para insights de mercado, ou ferramentas de IA generativa para criação de conteúdo. Para mais informações personalizadas, entre em contato com nossa equipe.`;
+    return `${name || 'Alma empreendedora'}, a IA não é apenas tecnologia, é uma extensão da sua intuição para superar "${challenge || 'os desafios do seu caminho'}". 
+
+Imagine ter um oráculo digital que antecipa tendências antes que se tornem visíveis, um assistente que automatiza o mundano para que você habite o extraordinário, e um amplificador que transforma seu sussurro em um chamado que ressoa pelo universo digital.
+
+As ferramentas existem. A magia está em como você as usa para manifestar sua visão única no mundo.`;
   }
 }
 
@@ -49,17 +53,17 @@ export async function generateInspiration(name, challenge) {
     log('Erro ao gerar inspiração:', error);
     
     // Fallback em caso de erro
-    return `✨ *Pílula de Inspiração*
+    return `🪷 Pílula de Inspiração
 
-Em mares de incerteza, você navega, ${name || 'empreendedor'},
-Com a Alma do Negócio a iluminar,
-Desafios enormes, como montanhas se elevam,
-Mas você está aqui para conquistar.
+Nos mares do sonho, veleje sem temor,
+Cada solução é um farol que guia com amor.
+Na dança das ondas, encontre a harmonia,
+E com cada venda, celebre a sinfonia.
 
-No vulcão do desafio, um diamante nasce,
-Em seu Ikigai, sua verdadeira luz resplandece,
-Em seu espírito, um fogo incansável arde,
-Você é a estrela que o universo conhece.`;
+${name || 'Alma vibrante'}, teu espírito é forte, tua visão é clara,
+Escalar é arte, e a tua luz nunca para.
+Com coragem e propósito, o mundo vais iluminar,
+E com cada passo, mais longe vais chegar.`;
   }
 }
 
@@ -75,7 +79,7 @@ export async function generateProfileSummary(profileData) {
     }
     
     // Constrói o prompt com base nos dados disponíveis
-    let prompt = `Gere um resumo conciso do perfil com base nestes dados: ${JSON.stringify(profileData)}`;
+    let prompt = `Decodifique a essência deste perfil e revele insights profundos: ${JSON.stringify(profileData)}`;
     
     // Faz a chamada para a API da OpenAI
     const response = await openaiService.analyzeImageWithVision(prompt);
