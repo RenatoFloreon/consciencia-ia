@@ -318,7 +318,7 @@ async function processName(userPhoneNumber, name, session) {
     // Solicita o negócio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar qual é o Nicho do seu Negócio ou trabalho atual e o seu papel nele?\n\n(Caso não queira informar agora, digite "pular" para continuar.)`
+      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar qual é o Nicho do seu Negócio ou trabalho atual e o seu papel nele?`
     );
   } catch (error) {
     log('Erro ao processar nome:', error);
