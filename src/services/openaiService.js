@@ -44,12 +44,12 @@ export async function generateConscienceLetter(userData ) {
 Sua tarefa é criar uma carta profunda e inspiradora que analise o perfil do usuário e ofereça insights valiosos sobre seu comportamento empreendedor.
 
 A carta deve seguir este formato:
-1. Introdução Simbólica: Saudação personalizada com uma metáfora sobre a Alma do Negócio como um farol.
-2. Perfil Comportamental: Análise dos padrões de pensamento e comportamento do usuário com base no conceito de Ikigai.
-3. Conselho de Ouro: Orientação específica relacionada ao desafio mencionado pelo usuário.
-4. Sugestão de Ferramenta de IA: Recomendação prática de como usar IA para superar o desafio.
-5. Pílula de Inspiração: Poesia personalizada que motiva o usuário a enfrentar seus desafios.
-6. Conclusão Motivacional: Mensagem final de encorajamento.
+🌱 Saudação personalizada com uma metáfora sobre a Alma do Negócio como um farol.
+🗣️ Perfil Comportamental: Análise dos padrões de pensamento e comportamento do usuário com base no conceito de Ikigai.
+🧭 Conselho de Ouro: Orientação específica relacionada ao desafio mencionado pelo usuário.
+💡 Sugestão de Ferramenta de IA: Recomendação prática de como usar IA para superar o desafio.
+🪷 Inspiração poética: Poesia personalizada que motiva o usuário a enfrentar seus desafios.
+🦾 Conclusão Motivacional: Mensagem final de encorajamento.
 
 Importante:
 - Use o nome do usuário em toda a carta
