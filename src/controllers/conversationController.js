@@ -581,7 +581,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Primeira parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✨ Sua Carta da Consciênc.IA foi entregue! ✨\n\nEspero que tenha gostado da sua Carta! 🌟"
+      "✨ Sua Carta da Consciênc.IA foi entregue! ✨\n\nEspero que tenha gostado da experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫""
     );
     
     // Pequeno delay entre as mensagens
@@ -590,7 +590,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Segunda parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Para saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫"
+      "🌸 Antes de irmos, uma última sugestão:\n\nExplore o Método S.I.M. (@metodosimbrasil) e o conceito de Ikigai (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar Saúde, Intuição e Mente,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o App Oficial do MAPA DO LUCRO, recomendo que peça agora mesmo o link para a equipe do evento."
     );
     
     // Pequeno delay entre as mensagens
@@ -599,7 +599,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Terceira parte do follow-up com o Método SIM
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "🌸 Antes de irmos, uma última sugestão:\n\nExplore o Método S.I.M. (@metodosimbrasil) e o conceito de Ikigai (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar Saúde, Intuição e Mente,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o App Oficial do MAPA DO LUCRO, recomendo que peça agora mesmo o link para a equipe do evento."
+      "Que a luz da sua Consciência continue sempre a brilhar.💫"
     );
     
   } catch (error) {
