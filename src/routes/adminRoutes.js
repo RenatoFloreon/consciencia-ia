@@ -19,7 +19,7 @@ router.get('/', (req, res) => {
 // 📊 API: Lista de interações
 router.get('/api/interactions', async (req, res) => {
   try {
-    const interactions = await interactionService.getAllInteractions();
+    const interactions = await interactionService.listInteractions();
     return res.json(interactions);
   } catch (err) {
     console.error('Erro ao buscar interações:', err);
@@ -30,7 +30,7 @@ router.get('/api/interactions', async (req, res) => {
 // 📈 API: Estatísticas resumidas
 router.get('/api/stats', async (req, res) => {
   try {
-    const stats = await interactionService.getStats();
+    const stats = await interactionService.getInteractionStats();
     return res.json(stats);
   } catch (err) {
     console.error('Erro ao buscar estatísticas:', err);
@@ -41,7 +41,7 @@ router.get('/api/stats', async (req, res) => {
 // 📦 Exportar como JSON
 router.get('/export/json', async (req, res) => {
   try {
-    const interactions = await interactionService.getAllInteractions();
+    const interactions = await interactionService.listInteractions();
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', 'attachment; filename=interacoes.json');
     return res.status(200).send(JSON.stringify(interactions, null, 2));
@@ -54,7 +54,7 @@ router.get('/export/json', async (req, res) => {
 // 📦 Exportar como CSV
 router.get('/export/csv', async (req, res) => {
   try {
-    const interactions = await interactionService.getAllInteractions();
+    const interactions = await interactionService.listInteractions();
     const header = ['Nome', 'Telefone', 'TipoInput', 'Perfil', 'ImagemURL', 'Desafio', 'CartaGerada'].join(';');
     const csvLines = interactions.map(inter => {
       const fields = [
