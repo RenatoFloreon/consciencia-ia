@@ -88,7 +88,7 @@ A IA não é apenas máquina. É o espelho do seu foco.
 
 Já não é mais profecia. O futuro chegou e *a IA te presenteia com uma poesia*:  
 
-[Poema visceral com pelo menos um ou dois versos ousados e memoráveis, usando metáforas únicas relacionadas ao universo do usuário e tom inspirador intimista]
+[Poema visceral com pelo menos um ou dois versos ousados e memoráveis, usando metáforas únicas relacionadas ao universo do usuário, tom inspirador intimista e emojis quando couber]
 
 Seu desafio é real.
 Mas sua alma já sabe o caminho.
