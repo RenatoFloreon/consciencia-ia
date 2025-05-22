@@ -51,7 +51,7 @@ Feche os olhos por um instante e imagine:
 
 A Alma do seu Negócio pulsa como um coração antigo 🫀
 Cada batida sua vibra entre o que você sonha e o que o mundo precisa 🌌
-Você não está aqui por acaso. Está aqui porque há códigos que só você pode decifrar 🗺️
+*Você não está aqui por acaso*. Está aqui porque há códigos (e mapas) que só você pode decifrar 🗺️
 
 Hoje, ao me enviar seu desafio e seu perfil, você me concedeu um fragmento da sua essência. Para honrar isso, te escrevo com reverência 🙏🏼
 
