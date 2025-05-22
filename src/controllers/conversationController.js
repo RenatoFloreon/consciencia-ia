@@ -261,7 +261,7 @@ async function startConversation(userPhoneNumber) {
     // Mensagem de boas-vindas
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Olá! 👋 Bem-vindo(a) ao Conselheiro Consciênc.IA do evento MAPA DO LUCRO!\n\nSou um assistente virtual criado para gerar sua Carta da Consciênc.IA personalizada — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.\nComo gostaria de ser chamado(a)? 🙂"
+      "Olá! 👋 Bem-vindo(a) ao Conselheiro Consciênc.IA do evento MAPA DO LUCRO: JORNADA DO EXTRAORDINÁRIO!\n\nSou um assistente virtual criado para gerar sua Carta da Consciênc.IA personalizada — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.\nComo gostaria de ser chamado(a)? 🙂"
     );
     
     // Atualiza o estado da sessão
@@ -318,7 +318,7 @@ async function processName(userPhoneNumber, name, session) {
     // Solicita o negócio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar qual é o seu Negócio ou trabalho atual e o seu papel nele?`
+      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar qual é o seu Negócio ou trabalho atual e o seu papel nele?\n\n(Responda em apenas uma frase)`
     );
   } catch (error) {
     log('Erro ao processar nome:', error);
@@ -353,7 +353,7 @@ async function processBusiness(userPhoneNumber, business, session) {
     // Solicita o perfil
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Perfeito! Agora, para gerar sua Carta da Consciênc.IA personalizada, preciso analisar seu perfil digital.\n\nVocê pode enviar uma foto sua, um print do seu perfil (instagram ou linkedin) ou simplesmente me dizer seu @ (como @renatohilel.oficial).\n\nEscolha a forma que preferir e compartilhe comigo."
+      "Perfeito! Agora, para gerar sua Carta da Consciênc.IA personalizada, preciso analisar seu perfil digital.\n\nVocê pode enviar uma foto sua, um print do seu perfil (instagram ou linkedin) ou simplesmente me dizer seu @ (como @conselheiro.consciência).\n\nEscolha a forma que preferir e compartilhe comigo."
     );
   } catch (error) {
     log('Erro ao processar negócio:', error);
@@ -590,7 +590,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Segunda parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✏️ Um último Conselho da Consciênc.IA:\n\nSe ainda não segue, explore os perfis do Método S.I.M. (@metodosimbrasil) e do IKIGAI (@coworkingikigai)."
+      "✏️ Um último Conselho da Consciênc.IA:\n\nAproveite para seguir e acompanhar os perfis do Método S.I.M. (@metodosimbrasil), do Mapa do Lucro (@mapadolucroh4b) e do IKIGAI (@coworkingikigai). \n\n🗝️A chave para o seu próximo nível está na nossa comunidade fortalecida!"
     );
     
     // Pequeno delay entre as mensagens
