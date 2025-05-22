@@ -238,7 +238,7 @@ async function handleImageMessage(userPhoneNumber, imageData, session) {
     // Solicita o desafio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Agora me diga, com sinceridade...\n\n🌐 *Se você pudesse escolher apenas UM desafio que, se resolvido, traria os resultados que você mais deseja, qual seria?*\n\n(Responda com apenas uma frase)"
+      "Só mais uma coisa: me responda com sinceridade...\n\n🌐 *Se você pudesse escolher apenas UM desafio que, se resolvido, traria os resultados que você mais deseja, qual seria?*\n\n(Responda com apenas uma frase)"
     );
   } catch (error) {
     log('Erro ao processar mensagem de imagem:', error);
