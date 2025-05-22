@@ -262,7 +262,7 @@ async function startConversation(userPhoneNumber) {
     // Mensagem de boas-vindas
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Olá! 👋 Bem-vindo(a) à *CONSCIÊNC.IA* do evento MAPA DO LUCRO: JORNADA DO EXTRAORDINÁRIO!\n\nSou uma IA criada para gerar sua *Carta personalizada* — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.🙂\n\nComo gostaria de ser chamado(a)?"
+      "Olá! 👋 Bem-vindo(a) à *CONSCIÊNC.IA* do evento *Mapa do Lucro: Jornada do Extraordinário*!\n\nSou uma IA criada para gerar sua *Carta personalizada* — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.🙂\n\nComo gostaria de ser chamado(a)?"
     );
     
     // Atualiza o estado da sessão
@@ -354,7 +354,7 @@ async function processBusiness(userPhoneNumber, business, session) {
     // Solicita o perfil
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Perfeito! Agora, para gerar sua *Carta personalizada*, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:\n\n1️⃣Uma foto sua *OU* \n2️⃣Um print do seu perfil (Instagram ou LinkedIn) *OU* \n3️⃣Apenas me diga seu @ (ex: @renatohilel.oficial).\n\n📝 Escolha *apenas UMA opção* e me envie agora para começar!"
+      "Perfeito! Agora, para gerar sua *Carta personalizada*, preciso analisar seu perfil digital. Consigo fazer isso com:\n\n1️⃣Uma foto sua *OU* \n2️⃣Um print do seu perfil (Instagram ou LinkedIn) *OU* \n3️⃣Apenas me diga seu @ (ex: @renatohilel.oficial).\n\n📝 Escolha *apenas UMA opção* e me envie agora para começar!"
     );
   } catch (error) {
     log('Erro ao processar negócio:', error);
@@ -417,7 +417,7 @@ async function processProfile(userPhoneNumber, profileInput, session) {
     // Solicita o desafio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Agora me diga, com sinceridade...\n\n🌐 *Se você pudesse escolher apenas *UM DESAFIO ATUAL* que, se resolvido, traria os resultados que você mais deseja, qual seria?*\n\n(Responda com apenas uma frase)"
+      "Agora me diga, com sinceridade...\n\n🌐 Se você pudesse escolher apenas *UM DESAFIO ATUAL* que, se resolvido, traria os resultados que você mais deseja, qual seria?\n\n(Responda com apenas uma frase)"
     );
   } catch (error) {
     log('Erro ao processar perfil:', error);
