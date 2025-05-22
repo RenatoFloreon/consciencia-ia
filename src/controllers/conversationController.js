@@ -217,7 +217,7 @@ async function handleImageMessage(userPhoneNumber, imageData, session) {
     // Analisa a imagem
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Obrigado! Vou analisar sua imagem. Isso pode levar alguns instantes..."
+      "Obrigado!"
     );
     
     let imageAnalysis = '';
@@ -319,7 +319,7 @@ async function processName(userPhoneNumber, name, session) {
     // Solicita o negócio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar qual é o Nicho do seu Negócio ou trabalho atual e o seu papel nele?\n\n*(Caso não queira informar agora, digite "pular" para continuar.)*`
+      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar qual é o seu Negócio ou trabalho atual e o seu papel nele?\n\n*(Responda em apenas uma frase)*`
     );
   } catch (error) {
     log('Erro ao processar nome:', error);
@@ -354,7 +354,7 @@ async function processBusiness(userPhoneNumber, business, session) {
     // Solicita o perfil
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Perfeito! Agora, para gerar sua Carta de Consciência personalizada, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:\n\n1️⃣ Envie um **print do seu perfil social** (Instagram ou LinkedIn) para uma leitura mais profunda.\n2️⃣ Envie **sua foto de perfil** (uma imagem que te represente hoje).\n3️⃣ Ou apenas me diga seu @ (ex: @renatohilel.oficial) para uma leitura objetiva.\n\n📝 Envie agora da forma que preferir!"
+      "Perfeito! Agora, para gerar sua Carta da Consciência personalizada, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:Envie uma foto sua OU um print do seu perfil (Instagram ou LinkedIn) OU apenas me diga seu @ (ex: @renatohilel.oficial).\n\n📝 Envie agora da forma que preferir!"
     );
   } catch (error) {
     log('Erro ao processar negócio:', error);
@@ -496,7 +496,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
       // Envia mensagem de conclusão
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "✨ *Sua Carta da Consciênc.IA foi entregue!* ✨\n\nEspero que tenha gostado da experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o Programa Consciênc.IA, de Renato Hilel e Nuno Arcanjo.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o evento MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores do programa! 💫"
+        "💌 *Sua Carta foi entregue!* ✨\n\nEspero que tenha apreciado a experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o PROGRAMA CONSCIÊNC.IA, criado pelos Mentores @RenatoHilel.oficial e @NunoArcanjo.poeta.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores desta experiência!\n\nUm gande abraço, Renato e Nuno. 💫"
       );
     } catch (error) {
       log('Erro ao gerar carta:', error);
@@ -543,10 +543,10 @@ async function sendLetter(userPhoneNumber, letterContent) {
       }
     }
     
-    // Envia a mensagem final com o Método S.I.M.
+    // Envia a mensagem final 
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "🌸 Antes de irmos, uma última sugestão:\n\nExplore o *Método S.I.M.* (@metodosimbrasil) e o conceito de *Ikigai* (@coworkingikigai).\n\nO Método S.I.M. te ajuda a equilibrar *Saúde, Intuição e Mente*,\nenquanto o Ikigai revela seu propósito autêntico e magnético no mundo dos negócios.\n\n🌐 Se ainda não baixou o *App Oficial do MAPA DO LUCRO*, recomendo que peça agora mesmo o link para a equipe do evento."
+      "✏️ Último Conselho de ouro da Consciênc.IA:\n\nAproveite para seguir e acompanhar os perfis do Método S.I.M. (@metodosimbrasil), do Mapa do Lucro (@mapadolucroh4b) e do IKIGAI (@coworkingikigai). \n\n🗝️A chave para o seu próximo nível está na nossa comunidade fortalecida!🦾"
     );
   } catch (error) {
     log('Erro ao enviar carta:', error);
@@ -588,7 +588,7 @@ async function processCommand(userPhoneNumber, text, session) {
     // Se não for um comando específico, envia uma mensagem padrão
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Obrigado por usar o Conselheiro Consciênc.IA! Se quiser receber uma nova carta, envie \"Quero receber a minha Carta!\" para reiniciar o processo."
+      "Obrigado por usar o Conselheiro Consciênc.IA!"
     );
   } catch (error) {
     log('Erro ao processar comando:', error);
