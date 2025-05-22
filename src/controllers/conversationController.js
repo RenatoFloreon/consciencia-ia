@@ -216,7 +216,7 @@ async function handleImageMessage(userPhoneNumber, imageData, session) {
     // Analisa a imagem
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Obrigado! Vou analisar sua imagem. Isso pode levar alguns instantes..."
+      "Obrigado!"
     );
     
     let imageAnalysis = '';
