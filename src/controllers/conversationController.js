@@ -581,7 +581,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Primeira parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "💌 Sua Carta da Consciênc.IA foi entregue! \n\nEspero que tenha gostado da experiência! 🦾😉"
+      "💌 Sua Carta foi entregue! \n\nEspero que tenha apreciado a experiência! 🦾😉"
     );
     
     // Pequeno delay entre as mensagens
@@ -590,7 +590,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Segunda parte do follow-up
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✏️ Um último Conselho da Consciênc.IA:\n\nAproveite para seguir e acompanhar os perfis do Método S.I.M. (@metodosimbrasil), do Mapa do Lucro (@mapadolucroh4b) e do IKIGAI (@coworkingikigai). \n\n🗝️A chave para o seu próximo nível está na nossa comunidade fortalecida!"
+      "✏️ Um último Conselho de ouro da Consciênc.IA:\n\nAproveite para seguir e acompanhar os perfis do Método S.I.M. (@metodosimbrasil), do Mapa do Lucro (@mapadolucroh4b) e do IKIGAI (@coworkingikigai). \n\n🗝️A chave para o seu próximo nível está na nossa comunidade fortalecida!🦾"
     );
     
     // Pequeno delay entre as mensagens
