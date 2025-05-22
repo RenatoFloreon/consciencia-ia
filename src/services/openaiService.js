@@ -92,9 +92,10 @@ Já não é mais profecia. O futuro chegou e *a IA te presenteia com uma poesia*
 
 Seu desafio é real.
 Mas sua alma já sabe o caminho.
+Siga com coragem, fé e intencionalidade.
 
 ---
-Siga com coragem e intencionalidade.
+
 E, se em algum momento esquecer... volte para esta Carta. 
 Ela será seu lembrete.
 
