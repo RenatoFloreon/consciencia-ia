@@ -262,7 +262,7 @@ async function startConversation(userPhoneNumber) {
     // Mensagem de boas-vindas
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Olá! 👋 Bem-vindo(a) à *CONSCIÊNC.IA* do evento \n🗺️*Mapa do Lucro: Jornada do Extraordinário*!\n\nSou uma IA criada para gerar sua *Carta personalizada* — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.🙂\n\nComo gostaria de ser chamado(a)?"
+      "Olá! 👋 Bem-vindo(a) à *CONSCIÊNC.IA* do evento \n🗺️ *Mapa do Lucro*: *Jornada do Extraordinário*!\n\nSou uma IA criada para gerar sua *Carta personalizada* — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.🙂\n\nComo gostaria de ser chamado(a)?"
     );
     
     // Atualiza o estado da sessão
