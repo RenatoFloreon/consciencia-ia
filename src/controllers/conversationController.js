@@ -262,7 +262,7 @@ async function startConversation(userPhoneNumber) {
     // Mensagem de boas-vindas
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Olá! 👋 Bem-vindo(a) à *CONSCIÊNC.IA* do evento *MAPA DO LUCRO: JORNADA DO EXTRAORDINÁRIO*!\n\nSou uma IA criada para gerar sua *Carta personalizada* — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.\nComo gostaria de ser chamado(a)? 🙂"
+      "Olá! 👋 Bem-vindo(a) à *CONSCIÊNC.IA* do evento MAPA DO LUCRO: JORNADA DO EXTRAORDINÁRIO!\n\nSou uma IA criada para gerar sua *Carta personalizada* — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.🙂\n\nComo gostaria de ser chamado(a)?"
     );
     
     // Atualiza o estado da sessão
@@ -319,7 +319,7 @@ async function processName(userPhoneNumber, name, session) {
     // Solicita o negócio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar *qual é o seu Negócio ou trabalho atual e o seu papel nele?*\n\n*(Responda em apenas uma frase)*`
+      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar *qual é o seu Negócio ou trabalho atual e o seu papel nele?*\n\n(Responda em apenas uma frase)`
     );
   } catch (error) {
     log('Erro ao processar nome:', error);
@@ -354,7 +354,7 @@ async function processBusiness(userPhoneNumber, business, session) {
     // Solicita o perfil
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Perfeito! Agora, para gerar sua Carta personalizada, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:\n1️⃣Uma foto sua *OU* \n2️⃣Um print do seu perfil (Instagram ou LinkedIn) *OU* \n3️⃣Apenas me diga seu @ (ex: @renatohilel.oficial).\n\n📝 Envie agora da forma que preferir!"
+      "Perfeito! Agora, para gerar sua *Carta personalizada*, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:\n\n1️⃣Uma foto sua *OU* \n2️⃣Um print do seu perfil (Instagram ou LinkedIn) *OU* \n3️⃣Apenas me diga seu @ (ex: @renatohilel.oficial).\n\n📝 Escolha *apenas UMA opção* e me envie agora para começar!"
     );
   } catch (error) {
     log('Erro ao processar negócio:', error);
@@ -546,7 +546,7 @@ async function sendLetter(userPhoneNumber, letterContent) {
     // Envia a mensagem final 
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✏️ Último *Conselho de ouro da Consciênc.IA*:\n\nAproveite para seguir e acompanhar os perfis do \n1️⃣*Método S.I.M.* (@metodosimbrasil),\n2️⃣*Mapa do Lucro* (@mapadolucroh4b) e \n3️⃣ *IKIGAI* (@coworkingikigai). \n\n🗝️*A chave para o seu próximo nível está na nossa comunidade fortalecida!*🦾"
+      "✏️ Último *Conselho de ouro da Consciênc.IA*:\n\nAproveite para seguir e acompanhar os perfis do \n1️⃣Método S.I.M. (@metodosimbrasil),\n2️⃣Mapa do Lucro (@mapadolucroh4b) e \n3️⃣IKIGAI (@coworkingikigai). \n\n🗝️A chave para o seu próximo nível está na *nossa comunidade fortalecida*!🦾"
     );
   } catch (error) {
     log('Erro ao enviar carta:', error);
