@@ -262,7 +262,7 @@ async function startConversation(userPhoneNumber) {
     // Mensagem de boas-vindas
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Olá! 👋 Bem-vindo(a) ao *Conselheiro Consciênc.IA* do evento MAPA DO LUCRO!\n\nSou um assistente virtual criado para gerar sua *Carta da Consciênc.IA* personalizada — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.\nComo gostaria de ser chamado(a)? 🙂"
+      "Olá! 👋 Bem-vindo(a) ao *Conselheiro Consciênc.IA* do evento *MAPA DO LUCRO: JORNADA DO EXTRAORDINÁRIO*!\n\nSou uma inteligência digital criada para gerar sua *Carta* personalizada — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.\nComo gostaria de ser chamado(a)? 🙂"
     );
     
     // Atualiza o estado da sessão
@@ -354,7 +354,7 @@ async function processBusiness(userPhoneNumber, business, session) {
     // Solicita o perfil
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Perfeito! Agora, para gerar sua Carta da Consciência personalizada, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:Envie uma foto sua OU um print do seu perfil (Instagram ou LinkedIn) OU apenas me diga seu @ (ex: @renatohilel.oficial).\n\n📝 Envie agora da forma que preferir!"
+      "Perfeito! Agora, para gerar sua Carta personalizada, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:Envie uma foto sua OU um print do seu perfil (Instagram ou LinkedIn) OU apenas me diga seu @ (ex: @renatohilel.oficial).\n\n📝 Envie agora da forma que preferir!"
     );
   } catch (error) {
     log('Erro ao processar negócio:', error);
@@ -417,7 +417,7 @@ async function processProfile(userPhoneNumber, profileInput, session) {
     // Solicita o desafio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Agora me diga, com sinceridade...\n\n🌐 *Se você pudesse escolher apenas UM desafio que, se resolvido, traria os resultados que você mais deseja, qual seria?*\n\n(Responda com apenas uma frase)"
+      "Agora me diga, com sinceridade...\n\n🌐 *Se você pudesse escolher apenas *UM DESAFIO ATUAL* que, se resolvido, traria os resultados que você mais deseja, qual seria?*\n\n(Responda com apenas uma frase)"
     );
   } catch (error) {
     log('Erro ao processar perfil:', error);
@@ -455,7 +455,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Informa que está gerando a carta
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "⏳ Estou analisando suas informações e preparando sua Carta da Consciênc.IA…\nIsso pode levar alguns instantes...\n\n🌟 Respire fundo enquanto a magia acontece."
+      "⏳ Estou analisando suas informações e preparando sua Carta da Consciênc.IA…\nIsso pode levar alguns instantes...\n\n🌟 Respire fundo enquanto a magia acontece🪄"
     );
     
     // Gera a carta
@@ -580,7 +580,7 @@ async function processCommand(userPhoneNumber, text, session) {
       
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "🌟 *Próximos Passos* 🌟\n\nAgora que você recebeu sua Carta da Consciênc.IA, recomendo:\n\n1. Salve sua carta para referência futura\n2. Visite o stand do Programa Consciênc.IA no evento MAPA DO LUCRO\n3. Converse com Renato Hilel e Nuno Arcanjo sobre como a IA pode transformar seu negócio\n\nPara mais informações, acesse: https://www.floreon.app.br/conscienc-ia"
+        "🌟 *Próximos Passos* 🌟\n\nAgora que você recebeu sua Carta da Consciênc.IA, recomendo:\n\n1. Salve sua carta para referência futura\n2. Converse com Renato Hilel e Nuno Arcanjo sobre como a IA pode transformar seu negócio\n\nPara mais informações, acesse: https://www.floreon.app.br/conscienc-ia"
       );
       return;
     }
