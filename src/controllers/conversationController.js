@@ -262,7 +262,7 @@ async function startConversation(userPhoneNumber) {
     // Mensagem de boas-vindas
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Olá! 👋 Bem-vindo(a) à *CONSCIÊNC.IA* do evento \n\n🗺️ *Mapa do Lucro*: *Jornada do Extraordinário*!\n\nSou uma IA criada para gerar sua *Carta personalizada* — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.🙂\n\nComo gostaria de ser chamado(a)?"
+      "Olá! 👋 Bem-vindo(a) à *CONSCIÊNC.IA* do evento \n\n🗺️ *Mapa do Lucro*: *Jornada do Extraordinário*!\n\nSou uma IA criada para gerar sua *Carta personalizada* — uma análise única e estratégica baseada no seu perfil e no momento atual.\n\nPara começar, preciso conhecer você melhor.🙂\n\nComo gostaria de ser chamado(a)?"
     );
     
     // Atualiza o estado da sessão
@@ -496,7 +496,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
       // Envia mensagem de conclusão
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "💌 *Sua Carta foi entregue!* ✨\n\nEspero que tenha apreciado a experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o *PROGRAMA CONSCIÊNC.IA*, criado pelos Mentores @RenatoHilel.oficial e @NunoArcanjo.poeta.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores desta experiência!\n\nUm grande abraço, Renato e Nuno. 💫"
+        "💌 *Sua Carta foi entregue!* ✨\n\nEspero que tenha apreciado a experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o *PROGRAMA CONSCIÊNC.IA*, criado pelos Mentores @RenatoHilel.oficial e @NunoArcanjo.poeta.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores desta experiência!\n\nUm grande abraço, *Renato e Nuno*. 💫"
       );
     } catch (error) {
       log('Erro ao gerar carta:', error);
