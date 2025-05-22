@@ -79,7 +79,7 @@ export async function generateProfileSummary(profileData) {
     }
     
     // Constrói o prompt com base nos dados disponíveis
-    let prompt = `Decodifique a essência deste perfil e revele insights profundos: ${JSON.stringify(profileData)}`;
+    let prompt = `Decodifique a essência arquetípica deste perfil e revele insights tão profundos que até pareçam segredos: ${JSON.stringify(profileData)}`;
     
     // Faz a chamada para a API da OpenAI
     const response = await openaiService.analyzeImageWithVision(prompt);
