@@ -96,7 +96,7 @@ Seu desafio é real.
 Mas sua alma já sabe o caminho.
 
 ---
-Siga com coragem. Siga com intenção.
+Siga com coragem e intencionalidade.
 E, se em algum momento esquecer... volte para esta Carta. 
 Ela será seu lembrete da sua grandeza e de quem você já É.
 
