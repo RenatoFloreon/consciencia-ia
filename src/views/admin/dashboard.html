@@ -181,8 +181,8 @@
             <div class="col-md-2 sidebar">
                 <div class="title">Consciênc.IA Admin</div>
                 <a href="#" class="active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
-                <a href="#" id="exportJson"><i class="bi bi-file-earmark-code me-2"></i> Exportar JSON</a>
-                <a href="#" id="exportCsv"><i class="bi bi-file-earmark-spreadsheet me-2"></i> Exportar CSV</a>
+                <a href="/admin/export/json" id="exportJson"><i class="bi bi-file-earmark-code me-2"></i> Exportar JSON</a>
+                <a href="/admin/export/csv" id="exportCsv"><i class="bi bi-file-earmark-spreadsheet me-2"></i> Exportar CSV</a>
             </div>
             
             <!-- Main Content -->
@@ -332,11 +332,12 @@
         // Fetch data from API
         async function fetchData() {
             try {
-                const interactionsResponse = await fetch('/api/admin/interactions');
+                const interactionsResponse = await fetch('/admin/api/interactions');
                 interactions = await interactionsResponse.json();
                 
-                const sessionsResponse = await fetch('/api/admin/sessions');
-                activeSessions = await sessionsResponse.json();
+                const sessionsResponse = await fetch('/admin/api/stats');
+                const stats = await sessionsResponse.json();
+                activeSessions = stats.activeSessions || [];
                 
                 updateDashboard();
             } catch (error) {
@@ -387,7 +388,7 @@
             paginatedData.forEach(interaction => {
                 const row = document.createElement('tr');
                 
-                const startDate = new Date(interaction.startTimestamp);
+                const startDate = new Date(interaction.startTimestamp || interaction.timestamp);
                 const endDate = new Date(interaction.endTimestamp || interaction.timestamp);
                 
                 row.innerHTML = `
@@ -591,21 +592,11 @@
             }
         }
         
-        // Export data as JSON
-        document.getElementById('exportJson').addEventListener('click', async () => {
-            window.location.href = '/admin/export/json';
-        });
+        // Auto-refresh data every 30 seconds
+        setInterval(fetchData, 30000);
         
-        // Export data as CSV
-        document.getElementById('exportCsv').addEventListener('click', async () => {
-            window.location.href = '/admin/export/csv';
-        });
-        
-        // Initial data fetch
+        // Initial data load
         document.addEventListener('DOMContentLoaded', fetchData);
-        
-        // Refresh data every 60 seconds
-        setInterval(fetchData, 60000);
     </script>
 </body>
 </html>
