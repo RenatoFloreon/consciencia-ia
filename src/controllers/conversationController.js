@@ -262,7 +262,7 @@ async function startConversation(userPhoneNumber) {
     // Mensagem de boas-vindas
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Olá! 👋 Bem-vindo(a) ao *Conselheiro Consciênc.IA* do evento *MAPA DO LUCRO: JORNADA DO EXTRAORDINÁRIO*!\n\nSou uma inteligência digital criada para gerar sua *Carta* personalizada — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.\nComo gostaria de ser chamado(a)? 🙂"
+      "Olá! 👋 Bem-vindo(a) à *CONSCIÊNC.IA* do evento *MAPA DO LUCRO: JORNADA DO EXTRAORDINÁRIO*!\n\nSou uma IA criada para gerar sua *Carta personalizada* — uma análise única, emocional e estratégica baseada no seu perfil e no momento que você está vivendo.\n\nPara começar, preciso conhecer você melhor.\nComo gostaria de ser chamado(a)? 🙂"
     );
     
     // Atualiza o estado da sessão
@@ -319,7 +319,7 @@ async function processName(userPhoneNumber, name, session) {
     // Solicita o negócio
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar qual é o seu Negócio ou trabalho atual e o seu papel nele?\n\n*(Responda em apenas uma frase)*`
+      `Obrigado, ${name}! 😊\n\nPara uma melhor experiência, gostaria de me contar *qual é o seu Negócio ou trabalho atual e o seu papel nele?*\n\n*(Responda em apenas uma frase)*`
     );
   } catch (error) {
     log('Erro ao processar nome:', error);
@@ -354,7 +354,7 @@ async function processBusiness(userPhoneNumber, business, session) {
     // Solicita o perfil
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Perfeito! Agora, para gerar sua Carta personalizada, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:Envie uma foto sua OU um print do seu perfil (Instagram ou LinkedIn) OU apenas me diga seu @ (ex: @renatohilel.oficial).\n\n📝 Envie agora da forma que preferir!"
+      "Perfeito! Agora, para gerar sua Carta personalizada, preciso analisar seu perfil digital.\n\nVocê escolhe como prefere se apresentar:\n1️⃣Uma foto sua *OU* \n2️⃣Um print do seu perfil (Instagram ou LinkedIn) *OU* \n3️⃣Apenas me diga seu @ (ex: @renatohilel.oficial).\n\n📝 Envie agora da forma que preferir!"
     );
   } catch (error) {
     log('Erro ao processar negócio:', error);
@@ -455,7 +455,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
     // Informa que está gerando a carta
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "⏳ Estou analisando suas informações e preparando sua Carta da Consciênc.IA…\nIsso pode levar alguns instantes...\n\n🌟 Respire fundo enquanto a magia acontece🪄"
+      "⏳ Estou analisando suas informações e preparando sua *Carta da Consciênc.IA*…\nIsso pode levar alguns instantes...\n\n🌟 *Respire fundo enquanto a magia acontece*🪄"
     );
     
     // Gera a carta
@@ -496,7 +496,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
       // Envia mensagem de conclusão
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "💌 *Sua Carta foi entregue!* ✨\n\nEspero que tenha apreciado a experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o PROGRAMA CONSCIÊNC.IA, criado pelos Mentores @RenatoHilel.oficial e @NunoArcanjo.poeta.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores desta experiência!\n\nUm gande abraço, Renato e Nuno. 💫"
+        "💌 *Sua Carta foi entregue!* ✨\n\nEspero que tenha apreciado a experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o *PROGRAMA CONSCIÊNC.IA*, criado pelos Mentores @RenatoHilel.oficial e @NunoArcanjo.poeta.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores desta experiência!\n\nUm gande abraço, Renato e Nuno. 💫"
       );
     } catch (error) {
       log('Erro ao gerar carta:', error);
@@ -546,7 +546,7 @@ async function sendLetter(userPhoneNumber, letterContent) {
     // Envia a mensagem final 
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✏️ Último Conselho de ouro da Consciênc.IA:\n\nAproveite para seguir e acompanhar os perfis do Método S.I.M. (@metodosimbrasil), do Mapa do Lucro (@mapadolucroh4b) e do IKIGAI (@coworkingikigai). \n\n🗝️A chave para o seu próximo nível está na nossa comunidade fortalecida!🦾"
+      "✏️ Último *Conselho de ouro da Consciênc.IA*:\n\nAproveite para seguir e acompanhar os perfis do \n1️⃣*Método S.I.M.* (@metodosimbrasil),\n2️⃣*Mapa do Lucro* (@mapadolucroh4b) e \n3️⃣ *IKIGAI* (@coworkingikigai). \n\n🗝️*A chave para o seu próximo nível está na nossa comunidade fortalecida!*🦾"
     );
   } catch (error) {
     log('Erro ao enviar carta:', error);
