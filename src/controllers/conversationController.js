@@ -354,7 +354,7 @@ async function processBusiness(userPhoneNumber, business, session) {
     // Solicita o perfil
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "Perfeito! Agora, para gerar sua *Carta personalizada*, preciso analisar seu perfil digital. Consigo fazer isso com:\n\n1️⃣Uma foto sua *OU* \n2️⃣Um print do seu perfil (Instagram ou LinkedIn) *OU* \n3️⃣Apenas me diga seu @ (ex: @renatohilel.oficial).\n\n📝 Escolha *apenas UMA opção* e me envie agora para começar!"
+      "Perfeito! Agora, para gerar sua *Carta personalizada*, preciso analisar seu perfil digital. Consigo fazer isso com:\n\n1️⃣Um print do seu perfil (Instagram ou LinkedIn) *OU* \n2️⃣Apenas me diga seu @ (ex: @coworkingikigai).\n\n📝 Escolha *apenas UMA opção* e me envie agora para começar!"
     );
   } catch (error) {
     log('Erro ao processar negócio:', error);
