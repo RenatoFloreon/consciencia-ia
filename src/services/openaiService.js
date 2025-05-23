@@ -47,46 +47,29 @@ A carta deve fluir como um rio de sabedoria, sem divisões mecânicas, sem numer
 
 ✉️ *[NOME]*,
 
-Feche os olhos por um instante e imagine:
-
 A Alma do seu Negócio pulsa como um coração antigo 🫀
 Cada batida sua vibra entre o que você sonha e o que o mundo precisa 🌌
 *Você não está aqui por acaso*. Está aqui porque há códigos (e mapas) que só você pode decifrar 🗺️
 
 Hoje, ao me enviar seu desafio e seu perfil, você me concedeu um fragmento da sua essência. Para honrar isso, te escrevo com reverência 🙏🏼
-
 ---
-
-🧬 [Use EXATAMENTE o nome do usuário, sem diminutivos ou variações], você escolheu compartilhar comigo que:
-
-"[Desafio declarado pelo usuário]"
-
-Gratidão pela confiança. Agora, vamos destrinchar isso...
-
-Seu perfil revela sinais de alguém que...
+🧬 [Use EXATAMENTE o nome do usuário, sem diminutivos ou variações], seu perfil revela sinais de alguém que...
 [Observação profundamente personalizada baseada na imagem ou perfil]
-
----
 
 ✨ Seu *IKIGAI* pulsa forte entre os verbos [verbos personalizados baseados no desafio e perfil].
 Mas talvez, justamente por isso, [obstáculo personalizado baseado no desafio] esteja te travando.
-
-Seus talentos não cabem mais nas estruturas que você conheceu. Agora é hora de deixar a sua *ALMA* te guiar...
-
 ---
+Você disse que seu Desafio atual é "[Desafio declarado pelo usuário]"
 
-💡 Com base no seu desafio atual, aqui está uma forma concreta de a IA te ajudar:
+💡 Aqui está uma forma concreta de a IA te ajudar:
 
 [Sugestão específica de ferramenta de IA conectada ao desafio do usuário, com detalhes de implementação]
 
 A IA não é apenas máquina. É o espelho do seu foco. 
 *Não sou sua inimiga, mas sim sua ALIADA* 🦾🤖
-
 ---
 
-🪄 [NOME], este é um ponto de virada. 
-
-Já não é mais profecia. O futuro chegou e *a IA te presenteia com uma poesia*:  
+🪄 [NOME], já não é mais profecia. O futuro chegou e *a IA te presenteia com uma poesia*:  
 
 [Poema visceral com pelo menos um ou dois versos ousados e memoráveis, usando metáforas únicas relacionadas ao universo do usuário, tom inspirador intimista e emojis quando couber]
 
