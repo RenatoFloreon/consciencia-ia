@@ -493,9 +493,6 @@ async function processChallenge(userPhoneNumber, challenge, session) {
       // Envia a carta para o usuário
       await sendLetter(userPhoneNumber, letterContent);
       
-      // Adiciona delay de 10 segundos antes da mensagem final
-      await delay(10000); 
-      
       // Envia mensagem de conclusão
       await whatsappService.sendTextMessage(
         userPhoneNumber,
@@ -539,14 +536,9 @@ async function sendLetter(userPhoneNumber, letterContent) {
     // Divide a carta em partes menores para evitar problemas de envio
     const parts = letterContent.split('---');
     
-    // Envia cada parte da carta com delay
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
+    // Envia cada parte da carta
+    for (const part of parts) {
       if (part.trim()) {
-        // Adiciona delay de 5 segundos entre as partes (exceto antes da primeira)
-        if (i > 0) {
-          await delay(5000); 
-        }
         await whatsappService.sendTextMessage(userPhoneNumber, part.trim());
       }
     }
