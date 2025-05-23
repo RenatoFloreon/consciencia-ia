@@ -546,7 +546,7 @@ async function sendLetter(userPhoneNumber, letterContent) {
     // Envia a mensagem final 
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✏️ Último *Conselho de ouro da Consciênc.IA*:\n\nAproveite para seguir e acompanhar os perfis do \n1️⃣Método S.I.M. (@metodosimbrasil),\n2️⃣Mapa do Lucro (@mapadolucroh4b) e \n3️⃣IKIGAI (@coworkingikigai). \n\n🗝️A chave para o seu próximo nível está na *nossa comunidade fortalecida*!🦾"
+      "✏️E lembre-se:🗝️A chave para o seu próximo nível está no *fortalecimento da nossa comunidade*!🦾:\n\nPor isso, acompanhe os perfis do \n1️⃣Método S.I.M. (@metodosimbrasil),\n2️⃣Mapa do Lucro (@mapadolucroh4b) e \n3️⃣IKIGAI (@coworkingikigai)."
     );
   } catch (error) {
     log('Erro ao enviar carta:', error);
