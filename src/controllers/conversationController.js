@@ -496,7 +496,7 @@ async function processChallenge(userPhoneNumber, challenge, session) {
       // Envia mensagem de conclusão
       await whatsappService.sendTextMessage(
         userPhoneNumber,
-        "💌 *Sua Carta foi entregue!* ✨\n\nEspero que tenha apreciado a experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar seu negócio e sua vida, conheça o *PROGRAMA CONSCIÊNC.IA*, criado pelos Mentores @RenatoHilel.oficial e @NunoArcanjo.poeta.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores desta experiência!\n\nUm grande abraço, *Renato e Nuno*. 💫"
+        "💌 *Sua Carta foi entregue!* ✨\n\nEspero que tenha apreciado a experiência! 🌟\n\nPara saber mais sobre como a IA pode transformar o seu Negócio, conheça o *PROGRAMA CONSCIÊNC.IA*, criado pelos Mentores @RenatoHilel.oficial e @NunoArcanjo.poeta.\n\nVisite: https://www.floreon.app.br/conscienc-ia\n\nAproveite o MAPA DO LUCRO e não deixe de conversar pessoalmente com os criadores desta experiência!\n\nUm grande abraço, *Renato e Nuno*. 💫"
       );
     } catch (error) {
       log('Erro ao gerar carta:', error);
@@ -546,7 +546,7 @@ async function sendLetter(userPhoneNumber, letterContent) {
     // Envia a mensagem final 
     await whatsappService.sendTextMessage(
       userPhoneNumber,
-      "✏️E lembre-se:\n🗝️A chave para o seu próximo nível está no *fortalecimento da nossa comunidade*!🦾\n\nPor isso, acompanhe os perfis: \n\n1️⃣Método S.I.M. (@metodosimbrasil),\n2️⃣Mapa do Lucro (@mapadolucroh4b) e \n3️⃣IKIGAI (@coworkingikigai)."
+      "✏️E lembre-se:\n\n🗝️A chave para o seu próximo nível está no *fortalecimento da nossa comunidade*!🦾\n\nPor isso, acompanhe os perfis: \n\n1️⃣Método S.I.M. (@metodosimbrasil),\n2️⃣Mapa do Lucro (@mapadolucroh4b) e \n3️⃣IKIGAI (@coworkingikigai)."
     );
   } catch (error) {
     log('Erro ao enviar carta:', error);
